@@ -1,0 +1,139 @@
+/* ---------------------------------------------
+   Theme-specific variable definitions
+   --------------------------------------------- */
+   html[data-bs-theme="dark"] {
+    --app-bg: #121212;
+    --app-fg: #e0e0e0;
+    --sidebar-bg: #1e1e1e;
+    --sidebar-border: #333;
+    --hover-bg: #2a2a2a;
+    --active-link-bg: #343a40;
+    --card-bg: #1e1e1e;
+    --card-border: #333;
+    --pre-bg: #1e1e1e;
+    --input-bg: #2a2a2a;
+    --input-fg: #e0e0e0;
+    --input-border: #444;
+    --placeholder: #777;
+  }
+  
+  html[data-bs-theme="light"] {
+    --app-bg: #ffffff;
+    --app-fg: #212529;
+    --sidebar-bg: #f8f9fa;
+    --sidebar-border: #ddd;
+    --hover-bg: #e2e6ea;
+    --active-link-bg: #e9ecef;
+    --card-bg: #ffffff;
+    --card-border: #ced4da;
+    --pre-bg: #f8f9fa;
+    --input-bg: #ffffff;
+    --input-fg: #212529;
+    --input-border: #ced4da;
+    --placeholder: #6c757d;
+  }
+  
+  /* ---------------------------------------------
+     Global body styling
+     --------------------------------------------- */
+  body {
+    background-color: var(--app-bg);
+    color: var(--app-fg);
+  }
+  
+  /* ---------------------------------------------
+     Sidebar (token store) styling
+     --------------------------------------------- */
+  .sidebar {
+    background-color: var(--sidebar-bg);
+    border-left: 1px solid var(--sidebar-border);
+    height: 100vh;
+    overflow-y: auto;
+    padding: 1rem;
+  }
+  
+  /* ---------------------------------------------
+     Token items in sidebar
+     --------------------------------------------- */
+  .token-item {
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+  }
+  .token-item:hover {
+    background-color: var(--hover-bg);
+    text-decoration: none;
+  }
+  
+  /* ---------------------------------------------
+     Active navigation link
+     --------------------------------------------- */
+  .nav-link.active {
+    font-weight: bold;
+    background-color: var(--active-link-bg);
+  }
+  
+  /* ---------------------------------------------
+     Navbar logo
+     --------------------------------------------- */
+  .navbar-logo {
+    height: 30px;
+    margin-right: 10px;
+  }
+  
+  /* ---------------------------------------------
+     Dark‐themed card (used for forms, etc.)
+     --------------------------------------------- */
+  .card-dark {
+    background-color: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 0.5rem;
+  }
+  
+  /* ---------------------------------------------
+     <pre> blocks for pretty-printed JSON
+     --------------------------------------------- */
+  pre {
+    background-color: var(--pre-bg);
+    padding: 1rem;
+    border-radius: 0.5rem;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-size: 0.9rem;
+  }
+  
+  /* ---------------------------------------------
+     Required/required‐one‐of form labels
+     --------------------------------------------- */
+  .required::after {
+    content: " *";
+    color: red;
+  }
+  .required-one-of::after {
+    content: " *";
+    color: orange;
+  }
+  
+  /* ---------------------------------------------
+     Form label text
+     --------------------------------------------- */
+  .form-label {
+    color: var(--app-fg);
+  }
+  
+  /* ---------------------------------------------
+     Inputs, textareas, selects
+     --------------------------------------------- */
+  textarea,
+  input,
+  select {
+    background-color: var(--input-bg);
+    color: var(--input-fg);
+    border: 1px solid var(--input-border);
+  }
+  textarea::placeholder,
+  input::placeholder {
+    color: var(--placeholder);
+  }
+  

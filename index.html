@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FastAPI SPA</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="style.css" rel="stylesheet" />
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="row">
+      <!-- Main content column -->
+      <div class="col-lg-8 col-md-7 col-sm-12">
+        <!-- Shared menu placeholder -->
+        <div id="menu-container"></div>
+
+        <div id="app" class="p-3">
+          <!-- Home content will be rendered here -->
+        </div>
+      </div>
+
+      <!-- Token store column -->
+      <div class="col-lg-4 col-md-5 col-sm-12" id="tokenstore-container"></div>
+    </div>
+  </div>
+
+  <!-- Toast notification -->
+  <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+    <div
+      id="toast"
+      class="toast text-white bg-success"
+      role="alert"
+      aria-live="assertive"
+      aria-atomic="true"
+    >
+      <div class="toast-header bg-success text-white">
+        <strong class="me-auto">Notification</strong>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          data-bs-dismiss="toast"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="toast-body" id="toast-body">Message goes here.</div>
+    </div>
+  </div>
+
+  <script>
+    let baseUrl = "";
+
+    async function loadConfig() {
+      try {
+        const res = await fetch("config.json");
+        const config = await res.json();
+        baseUrl = config.baseUrl || config.baseurl || "";
+      } catch (e) {
+        console.error("Error loading config.json:", e);
+      }
+    }
+
+    function showToast(message, success = true) {
+      const toastEl = document.getElementById("toast");
+      document.getElementById("toast-body").innerText = message;
+      toastEl.classList.remove("bg-success", "bg-danger");
+      toastEl.classList.add(success ? "bg-success" : "bg-danger");
+      new bootstrap.Toast(toastEl).show();
+    }
+
+    function getTokens() {
+      return JSON.parse(localStorage.getItem("tokens") || "[]");
+    }
+
+    function saveTokens(tokens) {
+      localStorage.setItem("tokens", JSON.stringify(tokens));
+      renderTokenList();
+    }
+
+    function renderTokenList() {
+      const tokens = getTokens();
+      const list = document.getElementById("token-list");
+      if (!list) return;
+      list.innerHTML = "";
+      tokens.forEach((token) => {
+        const li = document.createElement("li");
+        li.textContent = token;
+        li.className = "token-item text-truncate";
+        li.onclick = () => {
+          window.location.href = `view.html?token=${encodeURIComponent(
+            token
+          )}`;
+        };
+        list.appendChild(li);
+      });
+    }
+
+    function addToken() {
+      const input = document.getElementById("new-token");
+      const token = input.value.trim();
+      if (token) {
+        const tokens = getTokens();
+        if (!tokens.includes(token)) {
+          tokens.push(token);
+          saveTokens(tokens);
+        }
+        input.value = "";
+      }
+    }
+
+    function downloadTokens() {
+      const tokens = getTokens();
+      const blob = new Blob([tokens.join("\n")], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "tokens.txt";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // ─── Theme setup ─────────────────────────────────────────────────────────
+    function setupTheme() {
+      const saved = localStorage.getItem("preferred-theme") || "dark";
+      document.documentElement.setAttribute("data-bs-theme", saved);
+
+      const toggle = document.getElementById("theme-toggle");
+      if (toggle) {
+        toggle.checked = saved === "dark";
+        toggle.addEventListener("change", () => {
+          const newTheme = toggle.checked ? "dark" : "light";
+          document.documentElement.setAttribute("data-bs-theme", newTheme);
+          localStorage.setItem("preferred-theme", newTheme);
+        });
+      }
+    }
+
+    // ─── Load shared menu & highlight “home” ─────────────────────────────────
+    async function loadMenu() {
+      const res = await fetch("menu.html");
+      if (!res.ok) return;
+      const html = await res.text();
+      document.getElementById("menu-container").innerHTML = html;
+
+      // Theme toggle wiring
+      setupTheme();
+
+      // Highlight “home” tab
+      document
+        .querySelectorAll("#menu-container .nav-link")
+        .forEach((link) => {
+          const page = link.getAttribute("data-page");
+          link.classList.toggle("active", page === "home");
+        });
+    }
+
+    // ─── Load token‐store panel ────────────────────────────────────────────────
+    async function loadTokenStore() {
+      const res = await fetch("tokenstore.html");
+      if (!res.ok) return;
+      const html = await res.text();
+      document.getElementById("tokenstore-container").innerHTML = html;
+      renderTokenList();
+    }
+
+    // ─── Render Home content ─────────────────────────────────────────────────
+    function renderHomePage() {
+      const app = document.getElementById("app");
+      app.innerHTML = `
+        <h2 class="mb-4">Home</h2>
+        <div class="card card-dark">
+          <div class="card-body">
+            <p>Welcome to the FastAPI SPA.</p>
+            <p>Use the menu above to navigate:</p>
+            <ul>
+              <li><a href="report-object.html" class="link-light">Report via Object</a></li>
+              <li><a href="misp.html" class="link-light">Report via MISP</a></li>
+              <li><a href="freetext.html" class="link-light">Report via Freetext</a></li>
+              <li><a href="view.html" class="link-light">View Existing Report</a></li>
+            </ul>
+          </div>
+        </div>
+      `;
+    }
+
+    window.addEventListener("load", async () => {
+      await loadConfig();
+      await loadMenu();
+      await loadTokenStore();
+      renderHomePage();
+    });
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
