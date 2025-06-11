@@ -28,7 +28,6 @@ async function loadMenu() {
         .querySelectorAll("#menu-container .nav-link")
         .forEach((link) => {
         const page = link.getAttribute("data-page");
-        console.log(page);
         link.classList.toggle("active", page === current_page);
         });
     }

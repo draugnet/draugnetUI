@@ -44,13 +44,19 @@ function renderMISPEvent(event, {
     function buildNode(item, type) {
       const meta = { type, ...item };
       // determine display name
-      const name = esc(
-        item.name
-        ?? item.value
-        ?? item.uuid
-        ?? item.relationship_type
-        ?? ''
-      );
+      console.log(type);
+      const primaryFields = {
+        "Event": 'info',
+        "Attribute": 'value',
+        "Object": 'name',
+        "Tag": 'name',
+        "Galaxy": 'name',
+        "GalaxyCluster": 'name',
+        "Note": 'note',
+        "Opinion": 'comment',
+        "Relationship": 'relationship_type'
+      };
+      const name = item[primaryFields[type]];
   
       // collect children of all supported kinds
       let children = [];
@@ -87,10 +93,11 @@ function renderMISPEvent(event, {
   
       return { name, meta, children };
     }
-  
-    // ── Render a single <li> with tooltip & collapse logic ─────────────
+    
     function createNode(node) {
         const li = document.createElement('li');
+      
+        // Collapse toggle
         const toggle = document.createElement('span');
         toggle.className = 'toggle';
         if (node.children.length) {
@@ -98,72 +105,80 @@ function renderMISPEvent(event, {
         } else {
           toggle.style.visibility = 'hidden';
         }
+        li.append(toggle);
       
+        // Card container
         const card = document.createElement('div');
-        card.className = 'node-card card d-inline-flex align-items-center flex-nowrap';
+        card.className = 'node-card card mb-2';
       
-        // ⏱ Highlight newer-than-submission nodes
-        // ── Compute node timestamp ─────────────────────────────────────────
+        // ── Compute node timestamp & apply highlight ────────────────────────
         let ts = NaN;
-
         if (node.meta.timestamp) {
-            // explicit UNIX‐seconds field
-            ts = Number(node.meta.timestamp);
+          ts = Number(node.meta.timestamp);
         } else if (node.meta.created) {
-            // parse the "created" string as local‐server time,
-            // then add the server's timezone offset in seconds
-            const date = new Date(node.meta.created);
-            ts = Math.floor(date.getTime() / 1000);
-
-            // determine server TZ (e.g. "Europe/Berlin") from your loaded config
-            const tz = window.config?.timezone
+          const date = new Date(node.meta.created);
+          ts = Math.floor(date.getTime() / 1000);
+          const tz = window.config?.timezone
             || Intl.DateTimeFormat().resolvedOptions().timeZone;
-
-            // compute offset in seconds for that TZ at this date
-            const fmt = new Intl.DateTimeFormat('en-US', {
+          const fmt = new Intl.DateTimeFormat('en-US', {
             timeZone: tz,
             timeZoneName: 'short'
-            });
-            const parts = fmt.formatToParts(date);
-            const tzPart = parts.find(p => p.type === 'timeZoneName')?.value || '';
-            const m = tzPart.match(/([+-]\d{1,2})(?::?(\d{2}))?/);
-            if (m) {
-            const hours   = Number(m[1]);
-            const minutes = m[2] ? Number(m[2]) : 0;
-            ts += hours * 3600 + minutes * 60;
-            }
+          });
+          const part = fmt.formatToParts(date).find(p => p.type === 'timeZoneName')?.value || '';
+          const m = part.match(/([+-]\d{1,2})(?::?(\d{2}))?/);
+          if (m) {
+            const hours = Number(m[1]);
+            const mins  = m[2] ? Number(m[2]) : 0;
+            ts += hours * 3600 + mins * 60;
+          }
         }
-
-        if (!isNaN(ts) && ((ts) > highlightAfter)) {
+        if (!isNaN(ts) && ts > highlightAfter) {
           card.classList.add('highlight');
-        } else {
-          card.classList.remove('highlight');
         }
       
-        const badge = Object.assign(document.createElement('span'), {
-          className: 'badge bg-primary badge-type',
-          textContent: node.meta.type
-        });
-        const text = Object.assign(document.createElement('span'), {
-          textContent: node.name,
-          style: 'margin-left:4px;'
-        });
+        // ── Build content with Bootstrap grid ───────────────────────────────
+        const row = document.createElement('div');
+        row.className = 'row gx-2 align-items-center';
       
+        // Badge column
+        const badgeCol = document.createElement('div');
+        badgeCol.className = 'col-auto';
+        const badge = document.createElement('span');
+        badge.className = 'badge bg-primary badge-type';
+        badge.textContent = node.meta.type;
+        badgeCol.appendChild(badge);
+        row.appendChild(badgeCol);
+      
+        // Text column
+        const textCol = document.createElement('div');
+        textCol.className = 'col';
+        const text = document.createElement('span');
+        text.textContent = node.name;
+        textCol.appendChild(text);
+        row.appendChild(textCol);
+      
+        // Tooltip column
+        const tipCol = document.createElement('div');
+        tipCol.className = 'col-auto position-relative';
         const tip = document.createElement('div');
         tip.className = 'tooltip-popup';
         tip.innerHTML = Object.entries(node.meta)
-          .map(([k,v]) => `<div><strong>${esc(k)}</strong>: ${esc(String(v))}</div>`)
+          .map(([k, v]) => `<div><strong>${esc(k)}</strong>: ${esc(String(v))}</div>`)
           .join('');
+        tipCol.appendChild(tip);
+        row.appendChild(tipCol);
       
-        card.append(badge, text, tip);
-        li.append(toggle, card);
+        card.appendChild(row);
+        li.appendChild(card);
       
+        // ── Recursively append children ────────────────────────────────────
         if (node.children.length) {
           const ul = document.createElement('ul');
           ul.className = 'tree';
-          node.children.forEach(c => ul.appendChild(createNode(c)));
-          li.append(ul);
+          node.children.forEach(child => ul.appendChild(createNode(child)));
+          li.appendChild(ul);
         }
+      
         return li;
       }
       
