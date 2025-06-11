@@ -1,5 +1,8 @@
 # draugnet UI
 
+![Draugnet logo](https://github.com/draugnet/draugnetUI/raw/main/webroot/img/logo_vertical_dark_800.png)
+
+
 The UI component of draugnet, providing easy access to the functionalities of draugnet. 
 
 ### Capabilities
