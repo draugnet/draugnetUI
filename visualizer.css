@@ -35,6 +35,9 @@ ul.tree {
   }
   .toggle::before {
     content: "▼";
+    position: absolute;
+    top: -10px;
+    left: -5px;
     transition: transform 0.1s ease-in-out;
   }
   .collapsed > .toggle::before {

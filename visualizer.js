@@ -15,17 +15,15 @@ function renderMISPEvent(event, {
   
     // ── Overview panel ──────────────────────────────────────────────────
     panelContainer.innerHTML = '';
+    var datetime = new Date((event.timestamp * 1000)).toISOString();
     const overviewHtml = `
-      <p><strong>ID:</strong> ${esc(String(event.id))}</p>
-      <p><strong>UUID:</strong> ${esc(event.uuid)}</p>
-      <p><strong>Date:</strong> ${esc(event.date)}</p>
-      <p><strong>Info:</strong> ${esc(event.info)}</p>
-      <p><strong>Threat Level:</strong> ${esc(String(event.threat_level_id))}</p>
+        <p><strong>UUID:</strong> ${esc(event.uuid)}</p>
+        <p><strong>Last modified:</strong> ${esc(datetime)}</p>    
     `;
     const panel = document.createElement('div');
     panel.className = 'card mb-3';
-    panel.innerHTML = `<div class="card-header">Overview</div><div class="card-body">${overviewHtml}</div>`;
-    panelContainer.appendChild(panel);
+    panel.innerHTML = `<div class="card-header">${esc(event.info)}</div><div class="card-body">${overviewHtml}</div>`;
+    //panelContainer.appendChild(panel);
   
     // ── Type ordering for sorting ────────────────────────────────────────
     const typeOrder = {
@@ -41,22 +39,21 @@ function renderMISPEvent(event, {
       nodes.sort((a,b) => (typeOrder[a.meta.type]||99) - (typeOrder[b.meta.type]||99));
   
     // ── Recursive node‐builder ──────────────────────────────────────────
-    function buildNode(item, type) {
-      const meta = { type, ...item };
+    function buildNode(item, objecttype) {
+      const meta = { objecttype, ...item };
       // determine display name
-      console.log(type);
       const primaryFields = {
         "Event": 'info',
-        "Attribute": 'value',
+        "Attribute": ['value'],
         "Object": 'name',
         "Tag": 'name',
-        "Galaxy": 'name',
+        "Galaxy": 'value',
         "GalaxyCluster": 'name',
         "Note": 'note',
         "Opinion": 'comment',
         "Relationship": 'relationship_type'
       };
-      const name = item[primaryFields[type]];
+      const name = item[primaryFields[objecttype]];
   
       // collect children of all supported kinds
       let children = [];
@@ -93,9 +90,21 @@ function renderMISPEvent(event, {
   
       return { name, meta, children };
     }
-    
+
     function createNode(node) {
         const li = document.createElement('li');
+
+        const type_explanations = {
+            Event: 'A generic container, containing all other contextually linked objects.',
+            Attribute: 'An atomic data point, describing a single data-point/IoC with some metadata. Example: ip-dst:8.8.8.8, domain:starcraft2.com, sha256:1a9df47956c64a2302ad765aeefbb2a6e2bbcc30a47762733662b4c6c7796e2c.',
+            Object: 'A composite data structure, grouping multiple Attributes together based on rules defined by object templates. In most cases they allow to describe multiple aspects of concepts such as files, emails, etc.',
+            Tag: 'A string label, most often derived from a taxonomy in machine-tag format (such namespace:predicate="value")',
+            Galaxy: 'Galaxies are more complex knowledge base items that can be used as labelling. Galaxies are high level concepts, expressed via individual galaxy clusters. Each cluster will have a list of key values expressing the known/shared information associated with it. Example: Threat-actor:APT-29.',
+            GalaxyCluster: 'An individual cluster within a Galaxy, containing key-value pairs that describe a specific aspect of the Galaxy cluster.',
+            Note: 'An analyst note attached by a user to an element.',
+            Opinion: 'An analyst opinion attached by a user to an element, expressing a subjective view on the data.',
+            Relationship: 'An arbitrarily encoded relationship between two data points.'
+        }
       
         // Collapse toggle
         const toggle = document.createElement('span');
@@ -132,7 +141,7 @@ function renderMISPEvent(event, {
             ts += hours * 3600 + mins * 60;
           }
         }
-        if (!isNaN(ts) && ts > highlightAfter) {
+        if (!isNaN(ts) && ts > highlightAfter && node.meta.objecttype !== 'Event') {
           card.classList.add('highlight');
         }
       
@@ -145,7 +154,17 @@ function renderMISPEvent(event, {
         badgeCol.className = 'col-auto';
         const badge = document.createElement('span');
         badge.className = 'badge bg-primary badge-type';
-        badge.textContent = node.meta.type;
+        badge.textContent = node.meta.objecttype;
+        if (node.meta.objecttype === 'Attribute') {
+            if (!node.meta.object_relationsip) {
+                badge.textContent = node.meta.objecttype + '::' + node.meta.type;
+            } else {
+                badge.textContent = node.meta.objecttype + '::' + node.meta.object_relationship;
+            }
+        } else if (node.meta.objecttype === 'Galaxy') {
+            badge.textContent = node.meta.objecttype + '::' + node.meta.type;
+        }
+        badge.title = type_explanations[node.meta.objecttype];
         badgeCol.appendChild(badge);
         row.appendChild(badgeCol);
       
@@ -162,7 +181,8 @@ function renderMISPEvent(event, {
         tipCol.className = 'col-auto position-relative';
         const tip = document.createElement('div');
         tip.className = 'tooltip-popup';
-        tip.innerHTML = Object.entries(node.meta)
+        filteredEntries = filter_entries(node.meta);
+        tip.innerHTML = Object.entries(filteredEntries)
           .map(([k, v]) => `<div><strong>${esc(k)}</strong>: ${esc(String(v))}</div>`)
           .join('');
         tipCol.appendChild(tip);
@@ -180,6 +200,29 @@ function renderMISPEvent(event, {
         }
       
         return li;
+      }
+
+      function filter_entries(meta) {
+        fieldsToKeep = {
+            'Attribute': ['value', 'type', 'category', 'timestamp', 'to_ids', 'comment', 'object_relationship'],
+            'Event': ['info', 'uuid', 'timestamp', 'published', 'date', 'published', 'distribution'],
+            'Object': ['name', 'meta-category', 'timestamp', 'description', 'comment'],
+            'Tag': ['name', 'colour', 'numerical_value'],
+            'Galaxy': ['value', 'uuid', 'type', 'source', 'authors', 'description'],
+            'GalaxyCluster': ['name', 'value', 'comment'],
+            'Note': ['note', 'authors', 'orgc_uuid', 'created', 'modified'],
+            'Opinion': ['comment', 'opinion', 'authors', 'orgc_uuid', 'created', 'modified'],
+            'Relationship': ['relationship_type', 'source', 'destination']
+        };
+        // Filter out keys that are not needed in the tooltip
+        const filtered = {};
+        console.log(meta);
+        for (const [key, value] of Object.entries(meta)) {
+            if (fieldsToKeep[meta.objecttype].includes(key)) {
+              filtered[key] = value;
+            }
+        }
+        return filtered;
       }
       
   
