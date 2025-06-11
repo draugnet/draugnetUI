@@ -1,21 +1,27 @@
 <!-- menu.html -->
 <nav class="nav nav-pills my-3 align-items-center">
-    <img src="logo.png" alt="Logo" class="navbar-logo">
-    <a class="nav-link" href="index.html#home" data-page="home">Home</a>
-    <a class="nav-link" href="report-object.html" data-page="report-object">Report via Object</a>
-    <a class="nav-link" href="misp.html" data-page="report-misp">Report via MISP</a>
-    <a class="nav-link" href="freetext.html" data-page="report-freetext">Report via Freetext</a>
-    <a class="nav-link" href="view.html" data-page="view-report">View Existing Report</a>
-  
-    <!-- Light/Dark mode toggle -->
-    <div class="form-check form-switch ms-auto">
-      <input
-        class="form-check-input"
-        type="checkbox"
-        id="theme-toggle"
-        aria-label="Toggle light/dark mode"
-      />
-      <label class="form-check-label" for="theme-toggle">Dark Mode</label>
-    </div>
-  </nav>
-  
+  <img
+    id="logo-img"
+    src="/img/logo_light_embed.png"
+    alt="Logo"
+    class="navbar-logo"
+    data-logo-light="/img/logo_light_embed.png"
+    data-logo-dark="/img/logo_dark_embed.png"
+  />
+  <a class="nav-link" href="index.html#home"               data-page="home">Home</a>
+  <a class="nav-link" href="object.html"                  data-page="object">Report via Object</a>
+  <a class="nav-link" href="misp.html"                    data-page="misp">Report via MISP</a>
+  <a class="nav-link" href="freetext.html"                data-page="freetext">Report via Freetext</a>
+  <a class="nav-link" href="view.html"                    data-page="view">View Existing Report</a>
+
+  <!-- Light/Dark mode toggle -->
+  <div class="form-check form-switch ms-auto">
+    <input
+      class="form-check-input"
+      type="checkbox"
+      id="theme-toggle"
+      aria-label="Toggle light/dark mode"
+    />
+    <label class="form-check-label" for="theme-toggle">Dark Mode</label>
+  </div>
+</nav>

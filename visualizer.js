@@ -1,5 +1,5 @@
 // visualizer.js
-export function renderMISPEvent(event, {
+function renderMISPEvent(event, {
     treeContainer,
     panelContainer = treeContainer,
     highlightAfter = 0

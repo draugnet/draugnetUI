@@ -1,7 +1,5 @@
 // main.js
 
-import { renderMISPEvent } from './visualizer.js';
-
 let baseUrl = '';
 
 // ── Load config.json to get baseUrl ─────────────────────────────────
@@ -132,17 +130,21 @@ function initToggles() {
   rawEl     .style.display = 'block';
 }
 
-// ── Entry point ─────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', async () => {
-  // Load UI chrome (menu + token store)
-  if (typeof loadMenu === 'function')       loadMenu();
-  if (typeof loadTokenStore === 'function') loadTokenStore();
+window.addEventListener("load", async () => {
+    await loadConfig();
+    await loadMenu();
+    await loadTokenStore();
+    if (document.getElementById('raw-json')) {
+        initToggles();
+        loadReport();
+      }
+  });
 
-  // Load configuration, then if this page has a report UI, render it
-  await loadConfig();
 
-  if (document.getElementById('raw-json')) {
-    initToggles();
-    loadReport();
-  }
-});
+function showToast(message, success = true) {
+    const toastEl = document.getElementById("toast");
+    document.getElementById("toast-body").innerText = message;
+    toastEl.classList.remove("bg-success", "bg-danger");
+    toastEl.classList.add(success ? "bg-success" : "bg-danger");
+    new bootstrap.Toast(toastEl).show();
+}
