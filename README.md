@@ -14,6 +14,7 @@ If you wish to involve a third party outside of the MISP community behind draugn
 
 ### Installation
 
-Make sure you populate the webroot/config.json file. The contents of this file are meant to be public and only contain the URL of the draugnet backend along with the community's timezone (failing to set up the latter will simply cause some incorrect highlighting when viewing your reports - normally used to denote data added since your last submission).
+[ ] Make sure you populate the `webroot/config.json` file*. 
+[ ] Simply point apache to the webroot directory and serve the tool as you would any static webpage.
 
-Simply point apache to the webroot directory and serve the tool as you would any static webpage.
+* The contents of this file are meant to be public and only contain the URL of the draugnet backend along with the community's timezone (failing to set up the latter will simply cause some incorrect highlighting when viewing your reports - normally used to denote data added since your last submission).
