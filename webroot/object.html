@@ -4,259 +4,237 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>FastAPI SPA – Report via Object</title>
+
+  <!-- CSS -->
   <link href="css/fontawesome.all.min.css" rel="stylesheet" />
   <link href="css/bootstrap.min.css" rel="stylesheet" />
   <link href="css/style.css" rel="stylesheet" />
-  <style>
-    /* Enhance template selection */
-    #template-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.75rem;
-    }
-    .template-button {
-      flex: 1 1 200px;
-      text-align: center;
-      padding: 0.75rem 1rem;
-      border: 1px solid var(--card-border);
-      border-radius: 0.5rem;
-      background-color: var(--card-bg);
-      color: var(--app-fg);
-      transition: background-color 0.2s, transform 0.2s;
-      cursor: pointer;
-    }
-    .template-button:hover {
-      background-color: var(--hover-bg);
-      transform: translateY(-2px);
-    }
-    .template-button:active {
-      transform: translateY(0);
-    }
 
-    /* Styling for the template header */
-    #template-header {
+  <!-- Core UI Scripts -->
+  <script src="js/main.js"       defer></script>
+  <script src="js/tokenstore.js" defer></script>
+  <script src="js/menu.js"       defer></script>
+  <script src="js/visualizer.js" defer></script>
+
+  <!-- Shared Metadata -->
+  <script type="module" src="js/metadata.js" defer></script>
+
+  <style>
+    /* Style adjustments for the datalist dropdown */
+    #template-select {
       margin-bottom: 1rem;
-      padding: 1rem;
-      background-color: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 0.5rem;
-    }
-    #template-header h3 {
-      margin: 0;
-      font-weight: bold;
-      color: var(--app-fg);
-    }
-    #template-header p {
-      margin-top: 0.5rem;
-      color: var(--app-fg);
-      opacity: 0.85;
     }
   </style>
-  <script src="js/visualizer.js" defer></script>
-  <script src="js/main.js" defer></script>
-  <script src="js/tokenstore.js" defer></script>
-  <script src="js/menu.js" defer></script>
 </head>
 <body data-page="object">
   <div class="container-fluid">
     <div class="row">
-      <!-- Main content column -->
       <div class="col-lg-8 col-md-7 col-sm-12">
-        <!-- Shared menu placeholder -->
         <div id="menu-container"></div>
-
         <div class="p-3">
           <h2 class="mb-4">Report via Object</h2>
-          <div id="template-list" class="mb-3"></div>
-          <div id="template-header"></div>
+
+          <!-- Shared metadata -->
+          <div id="metadata-container"></div>
+
+          <!-- Filterable dropdown for templates -->
+          <div class="mb-3">
+            <label for="template-select" class="form-label">Select Template</label>
+            <input
+              class="form-control"
+              list="template-options"
+              id="template-select"
+              placeholder="Type to search…"
+            />
+            <datalist id="template-options"></datalist>
+          </div>
+
+          <!-- Template header -->
+          <div id="template-header" class="mb-3"></div>
+
+          <!-- Dynamic form -->
           <div class="card card-dark">
             <div class="card-body" id="template-form"></div>
           </div>
         </div>
       </div>
 
-      <!-- Token store column -->
       <div class="col-lg-4 col-md-5 col-sm-12" id="tokenstore-container"></div>
     </div>
   </div>
 
   <!-- Toast notification -->
-  <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
-    <div
-      id="toast"
-      class="toast text-white bg-success"
-      role="alert"
-      aria-live="assertive"
-      aria-atomic="true"
-    >
+  <div class="position-fixed bottom-0 end-0 p-3" style="z-index:11;">
+    <div id="toast" class="toast text-white bg-success" role="alert" aria-live="assertive" aria-atomic="true">
       <div class="toast-header bg-success text-white">
         <strong class="me-auto">Notification</strong>
-        <button
-          type="button"
-          class="btn-close btn-close-white"
-          data-bs-dismiss="toast"
-          aria-label="Close"
-        ></button>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
       </div>
-      <div class="toast-body" id="toast-body">Message goes here.</div>
+      <div class="toast-body" id="toast-body"></div>
     </div>
   </div>
 
   <script>
-
-    // ─── Load & render object templates ─────────────────────────────────────
+    // Fetch & populate the datalist, and wire input events
     async function loadTemplates() {
       if (!baseUrl) await loadConfig();
-      const endpoint = baseUrl
-        ? `${baseUrl}/object_templates`
-        : `${window.location.origin}/object_templates`;
+      const url = `${baseUrl || window.location.origin}/object_templates`;
       try {
-        const res = await fetch(endpoint);
-        if (!res.ok) {
-          console.error("Error fetching templates:", res.status);
-          return;
-        }
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(res.status);
         const templates = await res.json();
-        const list = document.getElementById("template-list");
-        if (!list) return;
-        list.innerHTML = "";
-        templates.forEach((name) => {
-          const btn = document.createElement("div");
-          btn.textContent = name;
-          btn.className = "template-button";
-          btn.onclick = () => loadTemplate(name);
-          list.appendChild(btn);
+
+        // Populate datalist
+        const dataList = document.getElementById("template-options");
+        dataList.innerHTML = "";
+        templates.forEach(name => {
+          const opt = document.createElement("option");
+          opt.value = name;
+          dataList.appendChild(opt);
+        });
+
+        // Wire the input box
+        const input = document.getElementById("template-select");
+        input.value = "";
+        input.addEventListener("change", () => {
+          const val = input.value.trim();
+          if (templates.includes(val)) {
+            loadTemplate(val);
+          }
         });
       } catch (err) {
-        console.error("Network error when fetching templates:", err);
+        console.error("Error loading templates:", err);
       }
     }
 
+    // Load one template and render its fields
     async function loadTemplate(name) {
       if (!baseUrl) await loadConfig();
-      const endpoint = baseUrl
-        ? `${baseUrl}/object_templates?template=${encodeURIComponent(name)}`
-        : `${window.location.origin}/object_templates?template=${encodeURIComponent(name)}`;
+      const url = `${baseUrl || window.location.origin}/object_templates?template=${encodeURIComponent(name)}`;
       try {
-        const res2 = await fetch(endpoint);
-        if (!res2.ok) {
-          console.error("Error fetching template details:", res2.status);
-          return;
-        }
-        const template = await res2.json();
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(res.status);
+        const template = await res.json();
 
-        // Create header with name, version, and description
-        const headerDiv = document.getElementById("template-header");
-        headerDiv.innerHTML = `
+        // Extract required lists
+        const requiredFields = template.required || [];
+        const requiredOneOf  = template.requiredOneOf || [];
+
+        // Header
+        const header = document.getElementById("template-header");
+        header.innerHTML = `
           <h3>${template.name} v${template.version}</h3>
           <p>${template.description}</p>
         `;
 
+        // Build form
         const container = document.getElementById("template-form");
-        if (!container) return;
         container.innerHTML = "";
         const form = document.createElement("form");
         form.id = "report-form";
 
-        const attrEntries = Object.entries(template.attributes).sort(
+        // Dynamic attributes
+        const attrs = Object.entries(template.attributes || {}).sort(
           (a, b) => (b[1]["ui-priority"] || 0) - (a[1]["ui-priority"] || 0)
         );
 
-        attrEntries.forEach(([key, value]) => {
-          const div = document.createElement("div");
-          div.className = "mb-3";
+        attrs.forEach(([key, value]) => {
+          const group = document.createElement("div");
+          group.className = "mb-3";
+
+          // Required if in either list
+          const isReq = requiredFields.includes(key) || requiredOneOf.includes(key);
+
+          // Label
           const label = document.createElement("label");
-
-          if (template.required && template.required.includes(key)) {
-            label.className = "form-label required";
-          } else if (template.requiredOneOf && template.requiredOneOf.includes(key)) {
-            label.className = "form-label required-one-of";
-          } else {
-            label.className = "form-label";
+          label.htmlFor = key;
+          label.className = "form-label";
+          label.innerHTML = `${key}${isReq ? ' <span class="text-danger">*</span>' : ''}`;
+          if (value.description) {
+            const help = document.createElement("small");
+            help.className = "form-text text-muted d-block";
+            help.textContent = value.description;
+            label.appendChild(help);
           }
-          label.textContent = `${key} (${value.description}) [${value["misp-attribute"]}]`;
-          div.appendChild(label);
+          group.appendChild(label);
 
-          if (value.values_list || value.sane_defaults) {
-            const select = document.createElement("select");
-            select.className = "form-select mb-2";
-            select.name = key;
-            const vals = value.values_list || value.sane_defaults;
-            vals.forEach((opt) => {
+          // Input/select
+          let inputEl;
+          const opts = value.values_list || value.sane_defaults;
+          if (opts) {
+            inputEl = document.createElement("select");
+            inputEl.className = "form-select";
+            opts.forEach(optVal => {
               const o = document.createElement("option");
-              o.value = opt;
-              o.textContent = opt;
-              select.appendChild(o);
+              o.value = optVal;
+              o.textContent = optVal;
+              inputEl.appendChild(o);
             });
+            // custom-value if sane_defaults
             if (value.sane_defaults) {
-              const o = document.createElement("option");
-              o.value = "__custom__";
-              o.textContent = "Custom...";
-              select.appendChild(o);
-              const inpt = document.createElement("input");
-              inpt.className = "form-control mt-2";
-              inpt.name = `${key}_custom`;
-              inpt.placeholder = "Custom value";
-              inpt.style.display = "none";
-              select.onchange = () => {
-                inpt.style.display = select.value === "__custom__" ? "block" : "none";
-              };
-              div.appendChild(select);
-              div.appendChild(inpt);
-            } else {
-              div.appendChild(select);
+              const customOpt = document.createElement("option");
+              customOpt.value = "__custom__";
+              customOpt.textContent = "Custom…";
+              inputEl.appendChild(customOpt);
+
+              const customInput = document.createElement("input");
+              customInput.type = "text";
+              customInput.name = `${key}_custom`;
+              customInput.className = "form-control mt-2";
+              customInput.placeholder = "Custom value";
+              customInput.style.display = "none";
+              group.appendChild(customInput);
+
+              inputEl.addEventListener("change", () => {
+                customInput.style.display = inputEl.value === "__custom__" ? "block" : "none";
+              });
             }
-          } else if (value.multiple) {
-            const ta = document.createElement("textarea");
-            ta.className = "form-control";
-            ta.name = key;
-            ta.placeholder = "Enter one per line";
-            div.appendChild(ta);
           } else {
-            const inpt = document.createElement("input");
-            inpt.className = "form-control";
-            inpt.name = key;
-            div.appendChild(inpt);
+            inputEl = document.createElement("input");
+            inputEl.type = "text";
+            inputEl.className = "form-control";
           }
-          form.appendChild(div);
+
+          inputEl.id = key;
+          inputEl.name = key;
+          if (isReq) inputEl.required = true;
+          group.appendChild(inputEl);
+          form.appendChild(group);
         });
 
-        const submitBtn = document.createElement("button");
-        submitBtn.type = "submit";
-        submitBtn.className = "btn btn-primary";
-        submitBtn.textContent = "Submit";
-        form.appendChild(submitBtn);
+        // Submit button
+        const btn = document.createElement("button");
+        btn.type = "submit";
+        btn.className = "btn btn-primary";
+        btn.textContent = "Submit";
+        form.appendChild(btn);
 
-        form.onsubmit = async (e) => {
+        // Handle submission (include metadata)
+        form.onsubmit = async e => {
           e.preventDefault();
           const data = {};
-          const fd = new FormData(form);
-          for (const [key, value] of fd.entries()) {
-            if (key.endsWith("_custom")) continue;
-            const custom = fd.get(`${key}_custom`);
-            if (custom && fd.get(key) === "__custom__") {
-              data[key] = custom;
-            } else if (data[key]) {
-              if (Array.isArray(data[key])) data[key].push(value);
-              else data[key] = [data[key], value];
-            } else {
-              data[key] = value.includes("\n") ? value.split("\n").filter(Boolean) : value;
-            }
+          new FormData(form).forEach((val, key) => {
+            if (val === "__custom__") return;
+            const custom = form.elements[`${key}_custom`]?.value;
+            data[key] = (custom && form.elements[key].value === "__custom__") ? custom : val;
+          });
+
+          if (typeof getMetadata === "function") {
+            Object.assign(data, getMetadata());
           }
 
-          const shareUrl = baseUrl
-            ? `${baseUrl}/share/objects`
-            : `${window.location.origin}/share/objects`;
-          const res3 = await fetch(shareUrl, {
+          const shareUrl = `${baseUrl || window.location.origin}/share/objects`;
+          const resp = await fetch(shareUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(data),
+            body: JSON.stringify(data)
           });
-          const json = await res3.json();
-          if (json.success) {
+          const result = await resp.json();
+
+          if (result.success) {
             const tokens = getTokens();
-            if (!tokens.includes(json.token)) {
-              tokens.push(json.token);
+            if (!tokens.includes(result.token)) {
+              tokens.push(result.token);
               saveTokens(tokens);
             }
             showToast("Report submitted successfully!");
@@ -267,16 +245,17 @@
 
         container.appendChild(form);
       } catch (err) {
-        console.error("Error fetching template details:", err);
+        console.error("Error loading template:", err);
       }
     }
 
     window.addEventListener("load", async () => {
       await loadConfig();
-      await loadMenu();
+      loadMenu();
       await loadTokenStore();
       loadTemplates();
     });
   </script>
+  <script src="js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

@@ -4,15 +4,20 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>FastAPI SPA – Report via Freetext</title>
+
+  <!-- CSS -->
   <link href="css/fontawesome.all.min.css" rel="stylesheet" />
   <link href="css/bootstrap.min.css" rel="stylesheet" />
   <link href="css/style.css" rel="stylesheet" />
 
   <!-- Core UI Scripts -->
   <script src="js/visualizer.js" defer></script>
-  <script src="js/main.js" defer></script>
+  <script src="js/main.js"       defer></script>
   <script src="js/tokenstore.js" defer></script>
-  <script src="js/menu.js" defer></script>
+  <script src="js/menu.js"       defer></script>
+
+  <!-- Metadata component & logic -->
+  <script type="module" src="js/metadata.js" defer></script>
 </head>
 <body data-page="freetext">
   <div class="container-fluid">
@@ -23,6 +28,11 @@
 
         <div class="p-3">
           <h2 class="mb-4">Report via Freetext</h2>
+
+          <!-- Shared metadata UI -->
+          <div id="metadata-container"></div>
+
+          <!-- Freetext input card -->
           <div class="card card-dark">
             <div class="card-body">
               <textarea
@@ -65,25 +75,40 @@
       <div class="toast-body" id="toast-body">Message goes here.</div>
     </div>
   </div>
-  <script src="js/menu.js" defer></script>
-  <script src="js/tokenstore.js" defer></script>
-  <script>
+
+  <!-- Freetext submission logic -->
+  <script type="module">
+    import { getMetadata } from './js/metadata.js';
 
     async function submitFreetext() {
-      const rawText = document.getElementById("freetext-input").value.trim();
+      const rawText = document
+        .getElementById("freetext-input")
+        .value
+        .trim();
       if (!rawText) {
         showToast("Please enter some text to submit.", false);
         return;
       }
+
+      // Gather shared metadata
+      const meta = getMetadata();
+
       try {
         const endpoint = baseUrl
           ? `${baseUrl}/share/raw`
           : `${window.location.origin}/share/raw`;
+
+        const payload = {
+          text: rawText,
+          optional: meta
+        };
+
         const res = await fetch(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: rawText }),
+          body: JSON.stringify(payload),
         });
+
         const result = await res.json();
         if (res.ok && result.status === "ok") {
           const tokens = getTokens();
@@ -100,8 +125,10 @@
         console.error(err);
       }
     }
-
+    // Expose to global scope so the inline onclick can find it
+    window.submitFreetext = submitFreetext;
   </script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script src="js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
