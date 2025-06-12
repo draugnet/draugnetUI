@@ -5,7 +5,7 @@ let baseUrl = '';
 // ── Load config.json to get baseUrl ─────────────────────────────────
 async function loadConfig() {
   try {
-    const res = await fetch('config.json');
+    const res = await fetch('config/config.json');
     const cfg = await res.json();
     baseUrl = cfg.baseUrl || cfg.baseurl || window.location.origin;
   } catch (e) {
@@ -74,7 +74,7 @@ async function loadReport() {
       <div class="card mb-3">
         <div class="card-body">
           <strong>Token:</strong> ${esc(token)}<br>
-          <strong>Submitted:</strong> ${new Date(tsNum * 1000).toLocaleString()}<br>
+          <strong>Submitted:</strong> ${new Date(tsNum * 1000).toISOString()}<br>
           <small class="text-muted">(Unix: ${tsNum})</small>
         </div>
       </div>
