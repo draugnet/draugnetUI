@@ -1,3 +1,4 @@
 {
-    "baseurl": "https://path.to.draugnet.backend"
+    "baseurl": "https://path.to.draugnet.backend",
+    "timezone": "Europe/Berlin"
 }

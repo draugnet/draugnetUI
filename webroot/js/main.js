@@ -47,7 +47,13 @@ async function loadReport() {
   const infoEl = document.getElementById('report-info');
 
   if (!token) {
-    rawEl.textContent = 'Error: missing ?token= parameter in URL';
+    rawEl.innerHTML = `
+    <p>
+      View your previously submitted reports by clicking on the appropriate token
+      from the token store to the right.
+    </p>
+    `;
+    
     return;
   }
 
@@ -135,9 +141,43 @@ window.addEventListener("load", async () => {
     await loadMenu();
     await loadTokenStore();
     if (document.getElementById('raw-json')) {
-        initToggles();
-        loadReport();
-      }
+      initToggles();
+      loadReport();
+    }
+    // grab ?token= from URL
+    const params     = new URLSearchParams(window.location.search);
+    const token      = params.get("token");
+
+    // ── view.html only: if we don't have a Visual-toggle button, bail out ──
+    const toggleVisualBtn = document.getElementById("toggle-visual");
+    if (!toggleVisualBtn) return;
+    // wire up Add-buttons
+    const addObjBtn  = document.getElementById("add-object");
+    const addTextBtn = document.getElementById("add-freetext");
+    if (token) {
+      addObjBtn.style.display  = "inline-block";
+      addObjBtn.onclick        = () => window.location = `object.html?token=${encodeURIComponent(token)}`;
+      addTextBtn.style.display = "inline-block";
+      addTextBtn.onclick       = () => window.location = `freetext.html?token=${encodeURIComponent(token)}`;
+    }
+
+    // if no token, show friendly message and bail out
+    if (!token) {
+      const main = document.querySelector('.p-3');
+      main.innerHTML = `
+        <h2 class="mb-0">View Report</h2>
+        <p>
+          View your previously submitted reports by clicking on the appropriate token
+          from the token store to the right.
+        </p>
+      `;
+      return;
+    }
+
+    // With a token present, default to visual view
+    initToggles();
+    loadReport();
+    document.getElementById("toggle-visual").click();
   });
 
 

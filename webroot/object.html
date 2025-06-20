@@ -251,17 +251,19 @@ async function loadTemplate(name) {
         }
       });
 
+      const metaContainer = document.getElementById('metadata-container');
+      const meta = (metaContainer && typeof getMetadata === 'function') ? getMetadata() : {};
+
       // 3) Build payload
       const payload = {
         data: templateData,
         template_name: template.name,
-        optional: typeof getMetadata === "function"
-          ? getMetadata()
-          : {}
+        optional: meta
       };
 
       // 4) POST to backend
-      const shareUrl = `${baseUrl || window.location.origin}/share/objects`;
+      let shareUrl = `${baseUrl || window.location.origin}/share/objects`;
+
       const resp = await fetch(shareUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

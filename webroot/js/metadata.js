@@ -74,12 +74,21 @@ async function loadMetadata() {
     return meta;
   }
   
-  // auto‐load on pages that include #metadata-container
-  document.addEventListener('DOMContentLoaded', () => {
-    if (document.getElementById('metadata-container')) {
-      loadMetadata();
+    // auto‐load on pages that include #metadata-container
+    document.addEventListener('DOMContentLoaded', () => {
+        const container = document.getElementById('metadata-container');
+        if (!container) return;
+    
+        // If a token query-param is present, skip metadata
+        const token = new URLSearchParams(window.location.search).get('token');
+        if (token) {
+            container.remove();
+        return;
     }
-  });
+    
+        // otherwise, load the metadata accordion as before
+        loadMetadata();
+    });
   
 // ─── Expose to the global scope ─────────────────────────────────────────
 window.getMetadata = getMetadata;

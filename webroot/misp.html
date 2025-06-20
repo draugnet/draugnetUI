@@ -92,8 +92,8 @@
         return;
       }
 
-      // Gather shared metadata
-      const meta = (typeof getMetadata === "function")
+      const metaContainer = document.getElementById('metadata-container');
+      const meta = (metaContainer && typeof getMetadata === 'function')
         ? getMetadata()
         : {};
 
