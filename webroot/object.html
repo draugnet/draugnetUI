@@ -272,7 +272,7 @@ async function loadTemplate(name) {
       const json = await resp.json();
 
       // 5) Handle response
-      if (json.success) {
+      if (resp.ok && json.status === "ok") {
         const tokens = getTokens();
         if (!tokens.includes(json.token)) {
           tokens.push(json.token);
