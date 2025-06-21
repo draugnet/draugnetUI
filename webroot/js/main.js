@@ -154,11 +154,14 @@ window.addEventListener("load", async () => {
     // wire up Add-buttons
     const addObjBtn  = document.getElementById("add-object");
     const addTextBtn = document.getElementById("add-freetext");
+    const addMispBtn = document.getElementById("add-misp");
     if (token) {
       addObjBtn.style.display  = "inline-block";
       addObjBtn.onclick        = () => window.location = `object.html?token=${encodeURIComponent(token)}`;
       addTextBtn.style.display = "inline-block";
       addTextBtn.onclick       = () => window.location = `freetext.html?token=${encodeURIComponent(token)}`;
+      addMispBtn.style.display = "inline-block";
+      addMispBtn.onclick       = () => window.location = `misp.html?token=${encodeURIComponent(token)}`;
     }
 
     // if no token, show friendly message and bail out
