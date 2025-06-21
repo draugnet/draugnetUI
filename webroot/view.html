@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="css/visualizer.css">
 
   <!-- Core UI Scripts -->
+  <script src="js/bootstrap.bundle.min.js" defer></script>
   <script src="js/visualizer.js" defer></script>
   <script src="js/main.js" defer></script>
   <script src="js/tokenstore.js" defer></script>
@@ -26,38 +27,62 @@
         <div class="p-3">
           <div class="d-flex justify-content-between align-items-center mb-2">
             <h2 class="mb-0">View Report</h2>
-            <div>
-              <!-- only shown when ?token= is present -->
-              <button
-              class="btn btn-outline-info btn-sm me-2"
-              id="add-misp"
-              style="display:none"
-            >
-              ➕ Add from MISP JSON
-            </button>
-              <button
-                class="btn btn-outline-info btn-sm me-2"
-                id="add-object"
-                style="display:none"
-              >
-                ➕ Add new Object
-              </button>
-              <button
-                class="btn btn-outline-info btn-sm me-2"
-                id="add-freetext"
-                style="display:none"
-              >
-                ➕ Add Freetext data
-              </button>
-              <button class="btn btn-outline-primary btn-sm me-2" id="toggle-visual">
-                🌳 Visual View
-              </button>
-              <button class="btn btn-outline-secondary btn-sm me-2" id="toggle-raw">
-                📄 Raw JSON
-              </button>
-              <button class="btn btn-outline-success btn-sm" id="download-json">
-                ⬇ Download JSON
-              </button>
+            <div class="btn-toolbar">
+          
+              <div class="btn-group me-2">
+                <!-- non-clickable label -->
+                <button type="button"
+                        class="btn btn-info btn-sm"
+                        disabled>
+                  <i class="fa-solid fa-plus"></i> Add
+                </button>
+                <!-- actionable items -->
+                <button type="button"
+                        class="btn btn-outline-info btn-sm"
+                        id="add-misp"
+                        style="display:none">
+                  MISP JSON
+                </button>
+                <button type="button"
+                        class="btn btn-outline-info btn-sm"
+                        id="add-object"
+                        style="display:none">
+                  Object
+                </button>
+                <button type="button"
+                        class="btn btn-outline-info btn-sm"
+                        id="add-freetext"
+                        style="display:none">
+                  Freetext
+                </button>
+              </div>
+          
+              <!-- existing toggles -->
+              <div class="btn-group me-2">
+                <button class="btn btn-outline-primary btn-sm"      id="toggle-visual">🌳 Visual View</button>
+                <button class="btn btn-outline-secondary btn-sm"    id="toggle-raw">📄 Raw JSON</button>
+              </div>
+          
+              <!-- Download JSON + Download As… -->
+              <div class="btn-group">
+                <button
+                  class="btn btn-outline-success btn-sm dropdown-toggle"
+                  type="button"
+                  id="download-as-btn"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false"
+                >
+                  📥 Download as…
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="download-as-btn">
+                  <li><a class="dropdown-item" href="#" data-format="json">JSON</a></li>
+                  <li><a class="dropdown-item" href="#" data-format="csv">CSV</a></li>
+                  <li><a class="dropdown-item" href="#" data-format="suricata">Suricata</a></li>
+                  <li><a class="dropdown-item" href="#" data-format="text">Text</a></li>
+                  <li><a class="dropdown-item" href="#" data-format="stix">STIX</a></li>
+                  <li><a class="dropdown-item" href="#" data-format="stix2">STIX2</a></li>
+                </ul>
+              </div>
             </div>
           </div>
           <div class="card card-dark">

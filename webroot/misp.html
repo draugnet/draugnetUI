@@ -140,13 +140,6 @@
 
     // Expose globally for inline onclick
     window.submitMISP = submitMISP;
-
-    // Initialize menu & token store on load
-    window.addEventListener("load", async () => {
-      await loadConfig();
-      loadMenu();
-      loadTokenStore();
-    });
   </script>
 
   <script src="js/bootstrap.bundle.min.js"></script>

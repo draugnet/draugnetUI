@@ -60,8 +60,8 @@ async function loadReport() {
   try {
     // Fetch event data and timestamp in parallel
     const [evtRes, tsRes] = await Promise.all([
-      fetch(`${baseUrl}/retrieve/${token}`),
-      fetch(`${baseUrl}/timestamp/${token}`)
+      fetch(`${baseUrl}/retrieve?token=${token}`),
+      fetch(`${baseUrl}/timestamp?token=${token}`)
     ]);
 
     if (!evtRes.ok) throw new Error(`retrieve failed: ${evtRes.status}`);
@@ -151,6 +151,39 @@ window.addEventListener("load", async () => {
     // ── view.html only: if we don't have a Visual-toggle button, bail out ──
     const toggleVisualBtn = document.getElementById("toggle-visual");
     if (!toggleVisualBtn) return;
+
+    const downloadAsLinks = document.querySelectorAll(
+      '#download-as-btn + .dropdown-menu .dropdown-item'
+    );
+    downloadAsLinks.forEach(link => {
+      link.addEventListener('click', async e => {
+        e.preventDefault();
+        const format = link.getAttribute('data-format');
+        const token  = new URLSearchParams(window.location.search).get('token');
+        if (!token) return;
+
+        const base = baseUrl || window.location.origin;
+        const url  = `${base}/retrieve?token=${encodeURIComponent(token)}&format=${encodeURIComponent(format)}`;
+        try {
+          const res = await fetch(url);
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const blob = await res.blob();
+          const blobUrl = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = blobUrl;
+          a.download = `${token}.${format}`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(blobUrl);
+        } catch (err) {
+          console.error('Download failed', err);
+          showToast('Download failed.', false);
+        }
+      });
+    });
+
+
     // wire up Add-buttons
     const addObjBtn  = document.getElementById("add-object");
     const addTextBtn = document.getElementById("add-freetext");
@@ -181,6 +214,9 @@ window.addEventListener("load", async () => {
     initToggles();
     loadReport();
     document.getElementById("toggle-visual").click();
+    document.addEventListener('DOMContentLoaded', () => {
+      updateIndexLogo();
+    });
   });
 
 
@@ -190,4 +226,14 @@ function showToast(message, success = true) {
     toastEl.classList.remove("bg-success", "bg-danger");
     toastEl.classList.add(success ? "bg-success" : "bg-danger");
     new bootstrap.Toast(toastEl).show();
+}
+
+// Helper to set the index logo based on current theme
+function updateIndexLogo() {
+  const img = document.getElementById('index-draugnet-image');
+  if (!img) return;
+  const theme = document.documentElement.getAttribute('data-bs-theme');
+  img.src = theme === 'dark'
+    ? img.getAttribute('data-dark-src')
+    : img.getAttribute('data-light-src');
 }

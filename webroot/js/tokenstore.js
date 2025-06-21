@@ -46,6 +46,9 @@ function renderTokenList() {
       }
     };
 
+    // purge all button
+
+
     li.appendChild(span);
     li.appendChild(btn);
     list.appendChild(li);
@@ -74,6 +77,13 @@ function downloadTokens() {
   a.download = "tokens.txt";
   a.click();
   URL.revokeObjectURL(url);
+}
+
+function purgeTokens() {
+  if (confirm("Are you sure you want to permanently remove all tokens from your token store?")) {
+    localStorage.removeItem("tokens");
+    renderTokenList();
+  }
 }
 
 async function loadTokenStore() {

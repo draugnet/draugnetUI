@@ -216,7 +216,6 @@ function renderMISPEvent(event, {
         };
         // Filter out keys that are not needed in the tooltip
         const filtered = {};
-        console.log(meta);
         for (const [key, value] of Object.entries(meta)) {
             if (fieldsToKeep[meta.objecttype].includes(key)) {
               filtered[key] = value;
