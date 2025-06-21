@@ -98,9 +98,16 @@
         : {};
 
       try {
-        const endpoint = baseUrl
-          ? `${baseUrl}/share/raw`
-          : `${window.location.origin}/share/raw`;
+        // Build share endpoint, carrying view-token if present
+        let endpoint = baseUrl
+          ? `${baseUrl}/share/misp`
+          : `${window.location.origin}/share/misp`;
+        const params     = new URLSearchParams(window.location.search);
+        const carryToken = params.get("token");
+        if (carryToken) {
+          const sep = endpoint.includes("?") ? "&" : "?";
+          endpoint += `${sep}token=${encodeURIComponent(carryToken)}`;
+        }
 
         // **Wrap metadata in an "optional" property**
         const payload = {
