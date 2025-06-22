@@ -2,7 +2,7 @@
 
 <img title="Draugnet logo" src="https://github.com/draugnet/draugnetUI/raw/main/webroot/img/logo_vertical_dark_800.png" width="300" height="300">
 
-The UI component of draugnet, providing easy access to the functionalities of draugnet. 
+The UI component of draugnet, providing easy access to the functionalities of [draugnet](https://github.com/draugnet/draugnet). 
 
 ### Capabilities
 
