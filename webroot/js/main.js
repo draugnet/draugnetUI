@@ -12,6 +12,14 @@ async function loadConfig() {
     console.warn('Could not load config.json; using window.location.origin');
     baseUrl = window.location.origin;
   }
+  apilink = document.getElementById('api-link');
+  if (apilink != 'undefined' && apilink !== null) {
+    apilink.innerHTML = `<a href="${esc(baseUrl)}">${esc(baseUrl)}</a>`;
+  }
+  apidocslink = document.getElementById('api-docs-link');
+  if (apidocslink != 'undefined' && apidocslink !== null) {
+    apidocslink.innerHTML = `<a href="${esc(baseUrl)}/docs">OpenAPI spec</a>`;
+  }
 }
 
 // ── HTML‐escape helper ───────────────────────────────────────────────
