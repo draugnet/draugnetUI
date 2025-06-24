@@ -137,3 +137,6 @@
     color: var(--placeholder);
   }
   
+  [data-bs-theme="dark"] .navbar-logo {
+    filter: brightness(1000%);
+  }
