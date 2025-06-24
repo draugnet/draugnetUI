@@ -8,12 +8,12 @@ async function loadConfig() {
     const res = await fetch('config/config.json');
     const cfg = await res.json();
     baseUrl = cfg.baseUrl || cfg.baseurl || window.location.origin;
-    document.getElementById('api-link').innerHTML = `<a href="${esc(baseUrl)}">${esc(baseUrl)}</a>`;
-    document.getElementById('api-docs-link').innerHTML = `<a href="${esc(baseUrl)}/docs">OpenAPI spec</a>`;
   } catch (e) {
     console.warn('Could not load config.json; using window.location.origin');
     baseUrl = window.location.origin;
   }
+  document.getElementById('api-link').innerHTML = `<a href="${esc(baseUrl)}">${esc(baseUrl)}</a>`;
+  document.getElementById('api-docs-link').innerHTML = `<a href="${esc(baseUrl)}/docs">OpenAPI spec</a>`;
 }
 
 // ── HTML‐escape helper ───────────────────────────────────────────────
