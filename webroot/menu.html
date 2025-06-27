@@ -1,14 +1,15 @@
 <!-- menu.html -->
 <nav class="nav nav-pills my-3 align-items-center">
-  <img
-    id="logo-img"
-    src="/img/logo_light_embed.png"
-    alt="Logo"
-    class="navbar-logo"
-    data-logo-light="/img/logo_light_embed.png"
-    data-logo-dark="/img/logo_dark_embed.png"
-  />
-  <a class="nav-link" href="index.html"                   data-page="home">Home</a>
+  <a class="nav-link" href="index.html" data-page="home">
+    <img
+      id="logo-img"
+      src="/img/logo_light_embed.png"
+      alt="Logo"
+      class="navbar-logo"
+      data-logo-light="/img/logo_light_embed.png"
+      data-logo-dark="/img/logo_dark_embed.png"
+    />
+  </a>
   <a class="nav-link" href="object.html"                  data-page="object">Report via Object</a>
   <a class="nav-link" href="misp.html"                    data-page="misp">Report via MISP</a>
   <a class="nav-link" href="freetext.html"                data-page="freetext">Report via Freetext</a>
@@ -25,3 +26,26 @@
     <label class="form-check-label" for="theme-toggle">Dark Mode</label>
   </div>
 </nav>
+
+<!-- Toast notification (shared via menu.html) -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+  <div
+    id="toast"
+    class="toast text-white bg-success"
+    role="alert"
+    aria-live="assertive"
+    aria-atomic="true"
+  >
+    <div class="toast-header bg-success text-white">
+      <strong class="me-auto">Notification</strong>
+      <button
+        type="button"
+        class="btn-close btn-close-white"
+        data-bs-dismiss="toast"
+        aria-label="Close"
+      ></button>
+    </div>
+    <div class="toast-body" id="toast-body">Message goes here.</div>
+  </div>
+</div>
+

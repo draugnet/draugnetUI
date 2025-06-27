@@ -87,7 +87,8 @@ async function loadReport() {
     infoEl.innerHTML = `
       <div class="card mb-3">
         <div class="card-body">
-          <strong>Token:</strong> ${esc(token)}<br>
+          <strong>Token:</strong>
+          <span class="copyable" data-copy-text="${esc(token)}">${esc(token)}</span><br>
           <strong>Submitted:</strong> ${new Date(tsNum * 1000).toISOString()}<br>
           <small class="text-muted">(Unix: ${tsNum})</small>
         </div>
@@ -96,6 +97,8 @@ async function loadReport() {
 
     // Show raw JSON
     rawEl.innerHTML = highlightJSON(data);
+    rawEl.classList.add('copyable');
+    rawEl.dataset.copyText = JSON.stringify(data, null, 2);
 
     // Render visual tree, highlighting nodes newer than tsNum
     renderMISPEvent(evt, {
@@ -107,6 +110,7 @@ async function loadReport() {
   } catch (err) {
     rawEl.textContent = `Failed to load report: ${err}`;
   }
+  attachClipboard('.copyable');
 }
 
 // ── Initialize Raw/Visual toggles ───────────────────────────────────
@@ -233,4 +237,29 @@ function updateIndexLogo() {
   img.src = theme === 'dark'
     ? img.getAttribute('data-dark-src')
     : img.getAttribute('data-light-src');
+}
+
+// copyText: write to clipboard & show a toast
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    showToast('Copied to clipboard!');
+  } catch (err) {
+    console.error('Copy failed', err);
+    showToast('Copy failed.', false);
+  }
+}
+
+// attachClipboard: wire up any element(s) matching a selector
+// to copy either its data-copy-text or its textContent
+function attachClipboard(selector) {
+  document.querySelectorAll(selector).forEach(el => {
+    el.style.cursor = 'pointer';
+    el.setAttribute('title', 'Click to copy');
+    el.addEventListener('click', () => {
+      // Prefer data-copy-text, otherwise use visible text
+      const txt = el.dataset.copyText ?? el.textContent.trim();
+      copyText(txt);
+    });
+  });
 }
