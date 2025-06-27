@@ -259,23 +259,46 @@ async function loadTemplate(name) {
         shareUrl += `${sep}token=${encodeURIComponent(carryToken)}`;
       }
 
-      const resp = await fetch(shareUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-      const json = await resp.json();
+      try {
+        const resp = await fetch(shareUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
 
-      // 5) Handle response
-      if (resp.ok && json.status === "ok") {
-        const tokens = getTokens();
-        if (!tokens.includes(json.token)) {
-          tokens.push(json.token);
-          saveTokens(tokens);
+        let error = null;
+        let json;
+        try {
+          json = await resp.json();
+        } catch (_) {
+          json = {};
         }
-        showToast("Report submitted successfully!");
-      } else {
-        showToast("Submission failed.", false);
+
+        // Extract any error detail
+        const detail = json.detail
+          || json.error
+          || json.message
+          || null;
+
+        // 5) Handle response
+        if (resp.ok && json.status === "ok") {
+          const tokens = getTokens();
+          if (!tokens.includes(json.token)) {
+            tokens.push(json.token);
+            saveTokens(tokens);
+          }
+          showToast("Report submitted successfully!");
+        } else {
+          // server returned 4xx/5xx or status!=="ok"
+          const msg = detail
+            ? `Submission failed: ${detail}`
+            : `Submission failed (HTTP ${resp.status})`;
+          showToast(msg, false);
+        }
+      } catch (networkErr) {
+        // fetch() itself threw (network down, CORS, etc)
+        console.error("Network error:", networkErr);
+        showToast("Network error – please try again.", false);
       }
     };
 
