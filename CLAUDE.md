@@ -89,6 +89,7 @@ All calls use the `baseurl` from `config.json`:
 | `/share/objects` | POST | object.html |
 | `/share/raw` | POST | freetext.html |
 | `/share/stix` | POST | stix.html |
+| `/share/csv` | POST | csv.html |
 | `/retrieve?token=&format=` | GET | view page (main.js) |
 | `/timestamp?token=` | GET | view page (main.js) |
 | `/object_templates[?template=]` | GET | object.html |
