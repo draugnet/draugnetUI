@@ -41,7 +41,7 @@
                 rows="10"
                 placeholder="Paste STIX 2.0 or 2.1 bundle JSON here..."
               ></textarea>
-              <button class="btn btn-primary" onclick="submitSTIX()">
+              <button id="submit-stix-btn" class="btn btn-primary">
                 Submit
               </button>
             </div>
@@ -123,8 +123,7 @@
       }
     }
 
-    // Expose to global scope so the inline onclick can find it
-    window.submitSTIX = submitSTIX;
+    document.getElementById('submit-stix-btn').addEventListener('click', submitSTIX);
   </script>
 
   <script src="js/bootstrap.bundle.min.js"></script>

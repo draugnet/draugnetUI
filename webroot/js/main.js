@@ -7,7 +7,19 @@ async function loadConfig() {
   try {
     const res = await fetch('config/config.json');
     const cfg = await res.json();
-    baseUrl = cfg.baseUrl || cfg.baseurl || window.location.origin;
+    const candidate = cfg.baseUrl || cfg.baseurl || '';
+    if (candidate) {
+      try {
+        const u = new URL(candidate);
+        if (u.protocol !== 'http:' && u.protocol !== 'https:') throw new Error('bad protocol');
+        baseUrl = candidate.replace(/\/$/, ''); // strip trailing slash
+      } catch {
+        console.warn('Invalid baseUrl in config.json; falling back to window.location.origin');
+        baseUrl = window.location.origin;
+      }
+    } else {
+      baseUrl = window.location.origin;
+    }
   } catch (e) {
     console.warn('Could not load config.json; using window.location.origin');
     baseUrl = window.location.origin;

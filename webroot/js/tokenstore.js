@@ -92,4 +92,13 @@ async function loadTokenStore() {
   const html = await res.text();
   document.getElementById("tokenstore-container").innerHTML = html;
   renderTokenList();
+
+  document.getElementById("btn-add-token").addEventListener("click", addToken);
+  document.getElementById("btn-download-tokens").addEventListener("click", downloadTokens);
+  document.getElementById("btn-purge-tokens").addEventListener("click", purgeTokens);
+
+  // Also submit on Enter in the token input
+  document.getElementById("new-token").addEventListener("keydown", e => {
+    if (e.key === "Enter") addToken();
+  });
 }

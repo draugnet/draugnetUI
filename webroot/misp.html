@@ -40,7 +40,7 @@
                 rows="10"
                 placeholder="Paste MISP event JSON here..."
               ></textarea>
-              <button class="btn btn-primary" onclick="submitMISP()">
+              <button id="submit-misp-btn" class="btn btn-primary">
                 Submit
               </button>
             </div>
@@ -116,8 +116,7 @@
       }
     }
 
-    // Expose globally for inline onclick
-    window.submitMISP = submitMISP;
+    document.getElementById('submit-misp-btn').addEventListener('click', submitMISP);
   </script>
 
   <script src="js/bootstrap.bundle.min.js"></script>

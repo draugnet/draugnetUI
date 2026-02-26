@@ -41,7 +41,7 @@
                 rows="10"
                 placeholder="Enter your report text here..."
               ></textarea>
-              <button class="btn btn-primary" onclick="submitFreetext()">
+              <button id="submit-freetext-btn" class="btn btn-primary">
                 Submit
               </button>
             </div>
@@ -112,8 +112,7 @@
         console.error(err);
       }
     }
-    // Expose to global scope so the inline onclick can find it
-    window.submitFreetext = submitFreetext;
+    document.getElementById('submit-freetext-btn').addEventListener('click', submitFreetext);
   </script>
 
   <script src="js/bootstrap.bundle.min.js"></script>

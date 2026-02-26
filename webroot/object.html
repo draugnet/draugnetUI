@@ -78,10 +78,14 @@ async function loadTemplate(name) {
     const requiredOneOf  = template.requiredOneOf || [];
 
     // Populate header
-    document.getElementById("template-header").innerHTML = `
-      <h3>${template.name} v${template.version}</h3>
-      <p>${template.description}</p>
-    `;
+    const headerEl = document.getElementById("template-header");
+    headerEl.innerHTML = '';
+    const h3 = document.createElement('h3');
+    h3.textContent = `${template.name} v${template.version}`;
+    headerEl.appendChild(h3);
+    const descP = document.createElement('p');
+    descP.textContent = template.description;
+    headerEl.appendChild(descP);
 
     // Prepare form container
     const container = document.getElementById("template-form");
@@ -99,19 +103,20 @@ async function loadTemplate(name) {
       group.className = "mb-3";
 
       // Asterisk logic
-      const isReq   = requiredFields.includes(key);
-      const isOne   = requiredOneOf.includes(key);
-      const asterisk = isReq
-        ? ' <span class="text-danger">*</span>'
-        : isOne
-          ? ' <span class="text-warning">*</span>'
-          : '';
+      const isReq = requiredFields.includes(key);
+      const isOne = requiredOneOf.includes(key);
 
       // Label
       const label = document.createElement("label");
       label.htmlFor = key;
       label.className = "form-label";
-      label.innerHTML = `${key}${asterisk}`;
+      label.textContent = key;
+      if (isReq || isOne) {
+        const star = document.createElement('span');
+        star.className = isReq ? 'text-danger' : 'text-warning';
+        star.textContent = ' *';
+        label.appendChild(star);
+      }
       if (def.description) {
         const help = document.createElement("small");
         help.className = "form-text text-muted d-block";

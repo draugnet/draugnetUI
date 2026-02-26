@@ -158,7 +158,7 @@
           <div id="metadata-container"></div>
 
           <!-- CSV file upload -->
-          <div id="csv-upload-area" class="mb-3" onclick="document.getElementById('csv-file-input').click()"
+          <div id="csv-upload-area" class="mb-3"
                title="Click to upload a CSV file, or drag and drop one here">
             <i class="fa-solid fa-file-csv fa-lg text-info"></i>
             <div>
@@ -214,10 +214,10 @@
 
           <!-- Controls below table -->
           <div class="mt-2 d-flex align-items-center gap-2">
-            <button id="btn-add-row" class="btn btn-outline-secondary btn-sm" onclick="addRow()">
+            <button id="btn-add-row" class="btn btn-outline-secondary btn-sm">
               <i class="fa-solid fa-plus me-1"></i>Add row
             </button>
-            <button class="btn btn-primary btn-sm" onclick="submitCSV()">
+            <button id="btn-submit-csv" class="btn btn-primary btn-sm">
               Submit
             </button>
           </div>
@@ -280,32 +280,33 @@
         <td><input type="text"  class="form-control form-control-sm"        data-col="comment"    placeholder="optional"></td>
         <td class="align-middle text-center pe-2">
           <button type="button" class="btn btn-outline-danger btn-sm btn-del"
-                  onclick="removeRow(this)" title="Remove row" tabindex="-1">
+                  title="Remove row" tabindex="-1">
             <i class="fa-solid fa-xmark"></i>
           </button>
         </td>
       `;
+      tr.querySelector('.btn-del').addEventListener('click', function () { removeRow(this); });
       tr.addEventListener('keydown', onLastCellTab);
       return tr;
     }
 
-    /* ── Public: add a row ────────────────────────────────────── */
-    window.addRow = function () {
+    /* ── Add a row ────────────────────────────────────────────── */
+    function addRow() {
       const tr = buildRow();
       tbody.appendChild(tr);
       syncRows();
       tr.querySelector('[data-col="type"]').focus();
-    };
+    }
 
-    /* ── Public: remove a row ─────────────────────────────────── */
-    window.removeRow = function (btn) {
+    /* ── Remove a row ─────────────────────────────────────────── */
+    function removeRow(btn) {
       if (tbody.querySelectorAll('tr').length <= 1) return;
       btn.closest('tr').remove();
       syncRows();
-    };
+    }
 
-    /* ── Public: submit ───────────────────────────────────────── */
-    window.submitCSV = async function () {
+    /* ── Submit ───────────────────────────────────────────────── */
+    async function submitCSV() {
       const rows       = Array.from(tbody.querySelectorAll('tr'));
       const attributes = [];
 
@@ -461,13 +462,17 @@
     }
 
     /* ── Wire up file input and drag-and-drop ─────────────────── */
-    const fileInput   = document.getElementById('csv-file-input');
-    const uploadArea  = document.getElementById('csv-upload-area');
+    const fileInput  = document.getElementById('csv-file-input');
+    const uploadArea = document.getElementById('csv-upload-area');
+
+    // Prevent the programmatic .click() from bubbling back to uploadArea
+    fileInput.addEventListener('click', e => e.stopPropagation());
 
     fileInput.addEventListener('change', () => {
       if (fileInput.files[0]) loadCSVFile(fileInput.files[0]);
     });
 
+    uploadArea.addEventListener('click', () => fileInput.click());
     uploadArea.addEventListener('dragover', e => {
       e.preventDefault();
       uploadArea.classList.add('drag-over');
@@ -480,8 +485,12 @@
       if (file) loadCSVFile(file);
     });
 
+    /* ── Wire up static buttons ───────────────────────────────── */
+    document.getElementById('btn-add-row').addEventListener('click', addRow);
+    document.getElementById('btn-submit-csv').addEventListener('click', submitCSV);
+
     /* ── Seed the first row ───────────────────────────────────── */
-    window.addRow();
+    addRow();
   </script>
 
   <script src="js/bootstrap.bundle.min.js"></script>
