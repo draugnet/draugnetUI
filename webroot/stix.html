@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Draugnet – Report via STIX</title>
+
+  <!-- CSS -->
+  <link href="css/fontawesome.all.min.css" rel="stylesheet" />
+  <link href="css/bootstrap.min.css" rel="stylesheet" />
+  <link href="css/style.css" rel="stylesheet" />
+
+  <!-- Core UI Scripts -->
+  <script src="js/visualizer.js" defer></script>
+  <script src="js/main.js"       defer></script>
+  <script src="js/tokenstore.js" defer></script>
+  <script src="js/menu.js"       defer></script>
+
+  <!-- Metadata component & logic -->
+  <script type="module" src="js/metadata.js" defer></script>
+</head>
+<body data-page="stix">
+  <div class="container-fluid">
+    <div class="row">
+      <!-- Main content column -->
+      <div class="col-lg-8 col-md-7 col-sm-12">
+        <div id="menu-container"></div>
+
+        <div class="p-3">
+          <h2 class="mb-4">Report via STIX</h2>
+
+          <!-- Shared metadata UI -->
+          <div id="metadata-container"></div>
+
+          <!-- STIX JSON input card -->
+          <div class="card card-dark">
+            <div class="card-body">
+              <textarea
+                id="stix-input"
+                class="form-control mb-3"
+                rows="10"
+                placeholder="Paste STIX 2.0 or 2.1 bundle JSON here..."
+              ></textarea>
+              <button class="btn btn-primary" onclick="submitSTIX()">
+                Submit
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Token store column -->
+      <div class="col-lg-4 col-md-5 col-sm-12" id="tokenstore-container"></div>
+    </div>
+  </div>
+
+  <!-- STIX submission logic -->
+  <script type="module">
+    import { getMetadata } from './js/metadata.js';
+
+    async function submitSTIX() {
+      const rawText = document.getElementById("stix-input").value.trim();
+      if (!rawText) {
+        showToast("Please paste a STIX bundle.", false);
+        return;
+      }
+
+      let stixData;
+      try {
+        stixData = JSON.parse(rawText);
+      } catch {
+        showToast("Invalid JSON format.", false);
+        return;
+      }
+
+      if (stixData.type !== "bundle" || !String(stixData.id).startsWith("bundle--")) {
+        showToast('Does not look like a STIX 2.x bundle. Expected {"type": "bundle", "id": "bundle--...", ...}', false);
+        return;
+      }
+
+      const metaContainer = document.getElementById('metadata-container');
+      const meta = (metaContainer && typeof getMetadata === 'function')
+        ? getMetadata()
+        : {};
+
+      let endpoint = baseUrl
+        ? `${baseUrl}/share/stix`
+        : `${window.location.origin}/share/stix`;
+
+      const params = new URLSearchParams(window.location.search);
+      const carryToken = params.get("token");
+      if (carryToken) {
+        const sep = endpoint.includes("?") ? "&" : "?";
+        endpoint += `${sep}token=${encodeURIComponent(carryToken)}`;
+      }
+
+      const payload = {
+        stix: stixData,
+        optional: meta
+      };
+
+      try {
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        const result = await res.json();
+        if (res.ok && result.status === "ok") {
+          const tokens = getTokens();
+          if (!tokens.includes(result.token)) {
+            tokens.push(result.token);
+            saveTokens(tokens);
+          }
+          showToast("STIX bundle submitted successfully!");
+        } else {
+          showToast(result.detail || "Submission failed.", false);
+        }
+      } catch (err) {
+        showToast("Network error or invalid response.", false);
+        console.error(err);
+      }
+    }
+
+    // Expose to global scope so the inline onclick can find it
+    window.submitSTIX = submitSTIX;
+  </script>
+
+  <script src="js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
