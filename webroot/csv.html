@@ -52,8 +52,7 @@
     }
 
     /* ── Inputs ───────────────────────────────────────────────── */
-    #csv-table input[type="text"],
-    #csv-table input[type="date"] {
+    #csv-table input[type="text"] {
       font-family: 'Courier New', Courier, monospace;
       font-size: .82rem;
       background: transparent;
@@ -61,8 +60,7 @@
       transition: border-color .15s, box-shadow .15s;
     }
 
-    #csv-table input[type="text"]:focus,
-    #csv-table input[type="date"]:focus {
+    #csv-table input[type="text"]:focus {
       background: rgba(255,255,255,.04);
     }
 
@@ -74,6 +72,113 @@
     #csv-table input.is-req:focus {
       border-color: var(--bs-warning);
       box-shadow: 0 0 0 .2rem rgba(var(--bs-warning-rgb), .15);
+    }
+
+    /* ── ISO datetime picker ──────────────────────────────────── */
+    .iso-dt-wrap { position: relative; }
+
+    .iso-dt-group {
+      display: flex;
+      align-items: stretch;
+    }
+
+    .iso-dt-text {
+      flex: 1;
+      min-width: 0;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: .78rem;
+      background: transparent;
+      border-color: rgba(255,255,255,.1);
+      border-right: none !important;
+      border-radius: .25rem 0 0 .25rem !important;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .iso-dt-text:focus {
+      background: rgba(255,255,255,.04);
+    }
+    .iso-dt-text.iso-invalid {
+      border-color: var(--bs-danger) !important;
+    }
+    .iso-dt-text.iso-invalid:focus {
+      box-shadow: 0 0 0 .2rem rgba(var(--bs-danger-rgb),.18);
+    }
+
+    .iso-cal-btn {
+      display: flex;
+      align-items: center;
+      background: transparent;
+      border: 1px solid rgba(255,255,255,.1);
+      border-left: none;
+      border-radius: 0 .25rem .25rem 0;
+      color: var(--bs-secondary-color);
+      padding: 0 .42rem;
+      cursor: pointer;
+      transition: color .1s, background .1s;
+      line-height: 1;
+    }
+    .iso-cal-btn:hover { color: var(--app-fg); background: rgba(255,255,255,.05); }
+
+    .iso-drop {
+      position: fixed;   /* escapes table overflow clipping */
+      z-index: 9999;
+      /* top/left set dynamically from getBoundingClientRect */
+      background: var(--sidebar-bg);
+      border: 1px solid var(--card-border);
+      border-radius: .4rem;
+      padding: .6rem .7rem;
+      box-shadow: 0 8px 28px rgba(0,0,0,.5);
+      min-width: 208px;
+    }
+
+    .iso-drop-label {
+      font-size: .65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--bs-secondary-color);
+      margin-bottom: .2rem;
+    }
+
+    .iso-drop input[type="date"],
+    .iso-drop input[type="time"] {
+      display: block;
+      width: 100%;
+      font-size: .8rem;
+      font-family: 'Courier New', Courier, monospace;
+      background: var(--input-bg);
+      color: var(--input-fg);
+      border: 1px solid var(--input-border);
+      border-radius: .25rem;
+      padding: .28rem .45rem;
+      outline: none;
+      transition: border-color .15s;
+    }
+    .iso-drop input[type="date"]:focus,
+    .iso-drop input[type="time"]:focus { border-color: var(--bs-primary); }
+    .iso-drop input[type="time"]:disabled { opacity: .3; cursor: not-allowed; }
+
+    .iso-time-toggle-row {
+      display: flex;
+      align-items: center;
+      gap: .35rem;
+      margin: .4rem 0 .25rem;
+      font-size: .75rem;
+      color: var(--bs-secondary-color);
+      cursor: pointer;
+      user-select: none;
+    }
+    .iso-time-toggle-row input[type="checkbox"] { cursor: pointer; }
+
+    .iso-drop-footer {
+      display: flex;
+      gap: .28rem;
+      margin-top: .5rem;
+      justify-content: flex-end;
+    }
+    .iso-drop-footer .btn {
+      font-size: .7rem;
+      padding: .18rem .5rem;
+      line-height: 1.4;
     }
 
     /* ── Row number gutter ────────────────────────────────────── */
@@ -138,7 +243,7 @@
     .col-type    { width: 13%;  }
     .col-value   { width: 22%;  }
     .col-cat     { width: 12%;  }
-    .col-date    { width: 10%;  }
+    .col-date    { width: 13%;  }  /* wider to fit text + calendar button */
     .col-comment { /* fill */   }
     .col-del     { width: 2.5rem; }
   </style>
@@ -176,6 +281,7 @@
               </label>
               <div id="csv-upload-hint" style="font-size:.75rem;color:var(--bs-secondary-color);margin-top:.1rem">
                 Accepts .csv files. Headers: <code>type, value, category, first_seen, last_seen, comment</code>
+                — dates as <code>YYYY-MM-DD</code> or <code>YYYY-MM-DDTHH:MM:SS</code>
               </div>
             </div>
             <input type="file" id="csv-file-input" accept=".csv,.txt" class="d-none">
@@ -263,12 +369,158 @@
       });
     }
 
+    /* ── Close all open ISO pickers when clicking outside ─────── */
+    // Drop is appended to <body>, so also check .iso-drop directly
+    document.addEventListener('click', e => {
+      if (!e.target.closest('.iso-dt-wrap') && !e.target.closest('.iso-drop')) {
+        document.querySelectorAll('.iso-drop:not([hidden])').forEach(d => { d.hidden = true; });
+      }
+    }, true);
+
+    /* ── ISO 8601 validation regex (date or datetime) ─────────── */
+    const ISO_RE = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2})?)?$/;
+
+    /* ── Build an ISO datetime picker widget ──────────────────── */
+    function buildISOPicker(col) {
+      // ── Input group (stays inside the table cell) ─────────────
+      const wrap = document.createElement('div');
+      wrap.className = 'iso-dt-wrap';
+      wrap.innerHTML = `
+        <div class="iso-dt-group">
+          <input type="text"
+                 class="form-control form-control-sm iso-dt-text"
+                 data-col="${col}"
+                 placeholder="YYYY-MM-DD"
+                 autocomplete="off" spellcheck="false">
+          <button type="button" class="iso-cal-btn" tabindex="-1"
+                  title="Pick date / time">
+            <i class="fa-regular fa-calendar-days fa-xs"></i>
+          </button>
+        </div>
+      `;
+
+      // ── Dropdown portal — appended to <body> to escape all
+      //    table overflow/clipping contexts ──────────────────────
+      const drop = document.createElement('div');
+      drop.className = 'iso-drop';
+      drop.hidden = true;
+      drop.innerHTML = `
+        <div class="iso-drop-label">Date</div>
+        <input type="date" class="iso-date-part mb-1">
+        <label class="iso-time-toggle-row">
+          <input type="checkbox" class="iso-time-chk">
+          Include time
+        </label>
+        <div class="iso-drop-label">Time (HH:MM:SS)</div>
+        <input type="time" class="iso-time-part" step="1" disabled>
+        <div class="iso-drop-footer">
+          <button type="button" class="btn btn-outline-secondary iso-now-btn">Now</button>
+          <button type="button" class="btn btn-outline-secondary iso-clear-btn">Clear</button>
+          <button type="button" class="btn btn-primary iso-ok-btn">OK</button>
+        </div>
+      `;
+      document.body.appendChild(drop);
+      // Store ref on wrap so callers can clean it up on row removal
+      wrap._isoDrop = drop;
+
+      const textInput  = wrap.querySelector('.iso-dt-text');
+      const calBtn     = wrap.querySelector('.iso-cal-btn');
+      const datePart   = drop.querySelector('.iso-date-part');
+      const timeChk    = drop.querySelector('.iso-time-chk');
+      const timePart   = drop.querySelector('.iso-time-part');
+      const nowBtn     = drop.querySelector('.iso-now-btn');
+      const clearBtn   = drop.querySelector('.iso-clear-btn');
+      const okBtn      = drop.querySelector('.iso-ok-btn');
+
+      /* Write date+time pickers back to the text input */
+      function commit() {
+        const d = datePart.value;
+        if (!d) { textInput.value = ''; return; }
+        if (timeChk.checked && timePart.value) {
+          const t = timePart.value;           // HH:MM or HH:MM:SS
+          textInput.value = d + 'T' + (t.length === 5 ? t + ':00' : t);
+        } else {
+          textInput.value = d;
+        }
+        validate();
+      }
+
+      /* Populate pickers from the text input when opening */
+      function loadFromText() {
+        const v = textInput.value.trim();
+        if (!v) { datePart.value = ''; timeChk.checked = false; timePart.disabled = true; timePart.value = ''; return; }
+        const m = v.match(/^(\d{4}-\d{2}-\d{2})(T(\d{2}:\d{2}(:\d{2})?))?$/);
+        if (!m) return;
+        datePart.value = m[1];
+        if (m[3]) {
+          timeChk.checked = true; timePart.disabled = false; timePart.value = m[3];
+        } else {
+          timeChk.checked = false; timePart.disabled = true; timePart.value = '';
+        }
+      }
+
+      function validate() {
+        const v = textInput.value.trim();
+        textInput.classList.toggle('iso-invalid', v !== '' && !ISO_RE.test(v));
+      }
+
+      calBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        const wasHidden = drop.hidden;
+        document.querySelectorAll('.iso-drop:not([hidden])').forEach(d => { d.hidden = true; });
+        if (wasHidden) {
+          // Position below the button, keeping the dropdown on-screen
+          const rect = calBtn.getBoundingClientRect();
+          const dropW = 212;
+          const left  = Math.min(rect.left, window.innerWidth - dropW - 8);
+          drop.style.top  = (rect.bottom + 4) + 'px';
+          drop.style.left = Math.max(4, left) + 'px';
+          drop.hidden = false;
+          loadFromText();
+          datePart.focus();
+        }
+      });
+
+      timeChk.addEventListener('change', () => {
+        timePart.disabled = !timeChk.checked;
+        if (timeChk.checked) timePart.focus();
+      });
+
+      datePart.addEventListener('change', () => { if (!timeChk.checked) commit(); });
+      timePart.addEventListener('change', commit);
+
+      nowBtn.addEventListener('click', () => {
+        const now = new Date();
+        datePart.value = now.toISOString().slice(0, 10);
+        timeChk.checked = true; timePart.disabled = false;
+        timePart.value = now.toTimeString().slice(0, 8);
+        commit();
+      });
+
+      clearBtn.addEventListener('click', () => {
+        datePart.value = ''; timeChk.checked = false;
+        timePart.disabled = true; timePart.value = '';
+        textInput.value = '';
+        textInput.classList.remove('iso-invalid');
+        drop.hidden = true;
+      });
+
+      okBtn.addEventListener('click', () => { commit(); drop.hidden = true; });
+
+      textInput.addEventListener('input', validate);
+      textInput.addEventListener('blur',  validate);
+
+      return wrap;
+    }
+
     /* ── Tab out of last cell → add new row ──────────────────── */
     function onLastCellTab(e) {
       if (e.key === 'Tab' && !e.shiftKey) {
         const rows = tbody.querySelectorAll('tr');
         const lastRow = rows[rows.length - 1];
-        const inputs  = Array.from(lastRow.querySelectorAll('input'));
+        // Exclude inputs inside the dropdown (not tab-reachable)
+        const inputs = Array.from(lastRow.querySelectorAll('input'))
+          .filter(i => !i.closest('.iso-drop'));
         if (document.activeElement === inputs[inputs.length - 1]) {
           e.preventDefault();
           addRow();
@@ -281,12 +533,12 @@
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td class="ps-3 align-middle"><span class="row-num">1</span></td>
-        <td><input type="text"  class="form-control form-control-sm is-req" data-col="type"       placeholder="ip-dst *"></td>
-        <td><input type="text"  class="form-control form-control-sm is-req" data-col="value"      placeholder="required *"></td>
-        <td><input type="text"  class="form-control form-control-sm"        data-col="category"   placeholder="optional"></td>
-        <td><input type="date"  class="form-control form-control-sm"        data-col="first_seen"></td>
-        <td><input type="date"  class="form-control form-control-sm"        data-col="last_seen"></td>
-        <td><input type="text"  class="form-control form-control-sm"        data-col="comment"    placeholder="optional"></td>
+        <td><input type="text" class="form-control form-control-sm is-req" data-col="type"     placeholder="ip-dst *"></td>
+        <td><input type="text" class="form-control form-control-sm is-req" data-col="value"    placeholder="required *"></td>
+        <td><input type="text" class="form-control form-control-sm"        data-col="category" placeholder="optional"></td>
+        <td class="iso-cell" data-for="first_seen"></td>
+        <td class="iso-cell" data-for="last_seen"></td>
+        <td><input type="text" class="form-control form-control-sm"        data-col="comment"  placeholder="optional"></td>
         <td class="align-middle text-center pe-2">
           <button type="button" class="btn btn-outline-danger btn-sm btn-del"
                   title="Remove row" tabindex="-1">
@@ -294,6 +546,11 @@
           </button>
         </td>
       `;
+      tr.querySelectorAll('.iso-cell').forEach(td => {
+        const wrap = buildISOPicker(td.dataset.for);
+        td.appendChild(wrap);
+        td._isoDrop = wrap._isoDrop;  // kept for cleanup when row is removed
+      });
       tr.querySelector('.btn-del').addEventListener('click', function () { removeRow(this); });
       tr.addEventListener('keydown', onLastCellTab);
       return tr;
@@ -307,10 +564,19 @@
       tr.querySelector('[data-col="type"]').focus();
     }
 
+    /* ── Remove body-appended drops for a given row ───────────── */
+    function cleanRowDrops(tr) {
+      tr.querySelectorAll('.iso-cell').forEach(td => {
+        if (td._isoDrop) { td._isoDrop.remove(); td._isoDrop = null; }
+      });
+    }
+
     /* ── Remove a row ─────────────────────────────────────────── */
     function removeRow(btn) {
       if (tbody.querySelectorAll('tr').length <= 1) return;
-      btn.closest('tr').remove();
+      const tr = btn.closest('tr');
+      cleanRowDrops(tr);
+      tr.remove();
       syncRows();
     }
 
@@ -334,6 +600,15 @@
 
         if (!type || !value) {
           showToast(`Row ${i + 1}: "Type" and "Value" are both required.`, false);
+          return;
+        }
+
+        if (firstSeen && !ISO_RE.test(firstSeen)) {
+          showToast(`Row ${i + 1}: "First Seen" must be YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS.`, false);
+          return;
+        }
+        if (lastSeen && !ISO_RE.test(lastSeen)) {
+          showToast(`Row ${i + 1}: "Last Seen" must be YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS.`, false);
           return;
         }
 
@@ -429,7 +704,8 @@
           return;
         }
 
-        // Clear existing rows and populate from file
+        // Clear existing rows — remove body-appended drops first
+        tbody.querySelectorAll('tr').forEach(cleanRowDrops);
         tbody.innerHTML = '';
         let loaded = 0;
 
