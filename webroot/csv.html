@@ -246,6 +246,44 @@
     .col-date    { width: 13%;  }  /* wider to fit text + calendar button */
     .col-comment { /* fill */   }
     .col-del     { width: 2.5rem; }
+
+    /* ── Type combobox ────────────────────────────────────────── */
+    .type-combo-drop {
+      position: fixed;
+      z-index: 9998;
+      background: var(--sidebar-bg);
+      border: 1px solid var(--card-border);
+      border-radius: .35rem;
+      box-shadow: 0 6px 20px rgba(0,0,0,.45);
+      max-height: 220px;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+
+    .type-combo-item {
+      padding: .28rem .65rem;
+      font-size: .78rem;
+      font-family: 'Courier New', Courier, monospace;
+      cursor: pointer;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: var(--app-fg);
+    }
+    .type-combo-item:hover,
+    .type-combo-item.tc-active { background: var(--hover-bg); }
+
+    .type-combo-item mark {
+      background: transparent;
+      color: var(--bs-warning);
+      font-weight: 700;
+    }
+
+    .type-combo-empty {
+      padding: .45rem .65rem;
+      font-size: .78rem;
+      color: var(--placeholder);
+    }
   </style>
 </head>
 <body data-page="csv">
@@ -379,6 +417,131 @@
 
     /* ── ISO 8601 validation regex (date or datetime) ─────────── */
     const ISO_RE = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2})?)?$/;
+
+    /* ── MISP types + categories loaded from describeTypes.json ── */
+    let allTypes      = [];
+    let allCategories = [];
+    let typeToCats    = {};   // type string → array of valid categories
+
+    async function loadTypes() {
+      try {
+        const r = await fetch('describeTypes.json');
+        const j = await r.json();
+        allTypes = j?.result?.types ?? [];
+        const catMap = j?.result?.category_type_mappings ?? {};
+        allCategories = Object.keys(catMap);
+        typeToCats = {};
+        for (const [cat, types] of Object.entries(catMap)) {
+          for (const t of types) {
+            if (!typeToCats[t]) typeToCats[t] = [];
+            typeToCats[t].push(cat);
+          }
+        }
+      } catch (e) {
+        console.warn('Could not load describeTypes.json — type/category suggestions unavailable.', e);
+      }
+    }
+
+    /* Return valid categories for a given type (all categories if unknown) */
+    function getValidCategories(currentType) {
+      if (!currentType) return allCategories;
+      const cats = typeToCats[currentType];
+      return (cats && cats.length) ? cats : allCategories;
+    }
+
+    /* ── Generic filterable combobox (type, category, …) ─────── */
+    function buildCombobox({ dataCol, placeholder, required, getItems }) {
+      const wrap = document.createElement('div');
+      wrap.innerHTML = `
+        <input type="text"
+               class="form-control form-control-sm${required ? ' is-req' : ''}"
+               data-col="${dataCol}"
+               placeholder="${placeholder}"
+               autocomplete="off" spellcheck="false">
+      `;
+
+      // Dropdown portal — appended to <body> so the table never clips it
+      const drop = document.createElement('div');
+      drop.className = 'type-combo-drop';
+      drop.hidden = true;
+      document.body.appendChild(drop);
+      wrap._drop = drop;
+
+      const input = wrap.querySelector('input');
+
+      function escRe(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+      function renderList() {
+        const q        = input.value.trim().toLowerCase();
+        const items    = getItems();
+        const filtered = q ? items.filter(t => t.toLowerCase().includes(q)) : items;
+
+        if (!filtered.length) {
+          drop.innerHTML = '<div class="type-combo-empty">No matches</div>';
+          return;
+        }
+
+        const re = q ? new RegExp(escRe(q), 'gi') : null;
+        drop.innerHTML = filtered
+          .map(t => {
+            const hl = re ? t.replace(re, m => `<mark>${m}</mark>`) : t;
+            return `<div class="type-combo-item" data-value="${t}">${hl}</div>`;
+          })
+          .join('');
+
+        drop.querySelectorAll('.type-combo-item').forEach(item => {
+          item.addEventListener('mousedown', e => {
+            e.preventDefault();           // keep input focused
+            input.value = item.dataset.value;
+            closeDrop();
+          });
+        });
+      }
+
+      function openDrop() {
+        if (!getItems().length) return;
+        renderList();
+        const rect  = input.getBoundingClientRect();
+        const dropW = Math.max(rect.width, 180);
+        const left  = Math.min(rect.left, window.innerWidth - dropW - 8);
+        drop.style.width = dropW + 'px';
+        drop.style.top   = (rect.bottom + 2) + 'px';
+        drop.style.left  = Math.max(4, left) + 'px';
+        drop.hidden = false;
+      }
+
+      function closeDrop() { drop.hidden = true; }
+
+      function moveFocus(dir) {
+        const items   = [...drop.querySelectorAll('.type-combo-item')];
+        if (!items.length) return;
+        const current = drop.querySelector('.tc-active');
+        let idx = current ? items.indexOf(current) + dir : (dir > 0 ? 0 : items.length - 1);
+        idx = Math.max(0, Math.min(idx, items.length - 1));
+        if (current) current.classList.remove('tc-active');
+        items[idx].classList.add('tc-active');
+        items[idx].scrollIntoView({ block: 'nearest' });
+      }
+
+      input.addEventListener('focus', openDrop);
+      input.addEventListener('input', () => { drop.hidden ? openDrop() : renderList(); });
+      input.addEventListener('keydown', e => {
+        if (drop.hidden) {
+          if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); openDrop(); }
+          return;
+        }
+        if      (e.key === 'ArrowDown') { e.preventDefault(); moveFocus(+1); }
+        else if (e.key === 'ArrowUp')   { e.preventDefault(); moveFocus(-1); }
+        else if (e.key === 'Enter') {
+          const active = drop.querySelector('.tc-active');
+          if (active) { e.preventDefault(); input.value = active.dataset.value; closeDrop(); }
+        }
+        else if (e.key === 'Escape') { closeDrop(); }
+      });
+      input.addEventListener('blur', () => setTimeout(closeDrop, 150));
+
+      return wrap;
+    }
 
     /* ── Build an ISO datetime picker widget ──────────────────── */
     function buildISOPicker(col) {
@@ -533,12 +696,12 @@
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td class="ps-3 align-middle"><span class="row-num">1</span></td>
-        <td><input type="text" class="form-control form-control-sm is-req" data-col="type"     placeholder="ip-dst *"></td>
-        <td><input type="text" class="form-control form-control-sm is-req" data-col="value"    placeholder="required *"></td>
-        <td><input type="text" class="form-control form-control-sm"        data-col="category" placeholder="optional"></td>
+        <td class="type-cell"></td>
+        <td><input type="text" class="form-control form-control-sm is-req" data-col="value"   placeholder="required *"></td>
+        <td class="cat-cell"></td>
         <td class="iso-cell" data-for="first_seen"></td>
         <td class="iso-cell" data-for="last_seen"></td>
-        <td><input type="text" class="form-control form-control-sm"        data-col="comment"  placeholder="optional"></td>
+        <td><input type="text" class="form-control form-control-sm"       data-col="comment"  placeholder="optional"></td>
         <td class="align-middle text-center pe-2">
           <button type="button" class="btn btn-outline-danger btn-sm btn-del"
                   title="Remove row" tabindex="-1">
@@ -546,29 +709,47 @@
           </button>
         </td>
       `;
-      tr.querySelectorAll('.iso-cell').forEach(td => {
-        const wrap = buildISOPicker(td.dataset.for);
-        td.appendChild(wrap);
-        td._isoDrop = wrap._isoDrop;  // kept for cleanup when row is removed
+
+      // All body-portal drops for this row — collected for unified cleanup
+      const drops = [];
+
+      const typeWrap = buildCombobox({ dataCol: 'type', placeholder: 'ip-dst *', required: true, getItems: () => allTypes });
+      tr.querySelector('.type-cell').appendChild(typeWrap);
+      drops.push(typeWrap._drop);
+
+      const typeInput = typeWrap.querySelector('input');
+      const catWrap = buildCombobox({
+        dataCol: 'category', placeholder: 'optional', required: false,
+        getItems: () => getValidCategories(typeInput.value.trim())
       });
+      tr.querySelector('.cat-cell').appendChild(catWrap);
+      drops.push(catWrap._drop);
+
+      tr.querySelectorAll('.iso-cell').forEach(td => {
+        const isoWrap = buildISOPicker(td.dataset.for);
+        td.appendChild(isoWrap);
+        drops.push(isoWrap._isoDrop);
+      });
+
+      tr._drops = drops;
+
       tr.querySelector('.btn-del').addEventListener('click', function () { removeRow(this); });
       tr.addEventListener('keydown', onLastCellTab);
       return tr;
     }
 
     /* ── Add a row ────────────────────────────────────────────── */
-    function addRow() {
+    function addRow(focusType = true) {
       const tr = buildRow();
       tbody.appendChild(tr);
       syncRows();
-      tr.querySelector('[data-col="type"]').focus();
+      if (focusType) tr.querySelector('[data-col="type"]').focus();
     }
 
-    /* ── Remove body-appended drops for a given row ───────────── */
+    /* ── Remove all body-portal drops for a given row ─────────── */
     function cleanRowDrops(tr) {
-      tr.querySelectorAll('.iso-cell').forEach(td => {
-        if (td._isoDrop) { td._isoDrop.remove(); td._isoDrop = null; }
-      });
+      (tr._drops || []).forEach(d => d?.remove());
+      tr._drops = [];
     }
 
     /* ── Remove a row ─────────────────────────────────────────── */
@@ -774,8 +955,8 @@
     document.getElementById('btn-add-row').addEventListener('click', addRow);
     document.getElementById('btn-submit-csv').addEventListener('click', submitCSV);
 
-    /* ── Seed the first row ───────────────────────────────────── */
-    addRow();
+    /* ── Load types then seed the first row ──────────────────── */
+    loadTypes().then(() => addRow(false));
   </script>
 
   <script src="js/bootstrap.bundle.min.js"></script>
