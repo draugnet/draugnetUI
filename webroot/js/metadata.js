@@ -5,7 +5,7 @@
  */
 async function loadMetadata() {
     // 1) insert HTML
-    const resp = await fetch('metadata.html');
+    const resp = await fetch('metadata.html', { cache: 'no-cache' });
     const frag = await resp.text();
     document.getElementById('metadata-container').innerHTML = frag;
   

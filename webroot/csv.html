@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Draugnet – Report via CSV</title>
+
+  <!-- CSS -->
+  <link href="css/fontawesome.all.min.css" rel="stylesheet" />
+  <link href="css/bootstrap.min.css" rel="stylesheet" />
+  <link href="css/style.css" rel="stylesheet" />
+
+  <!-- Core UI Scripts -->
+  <script src="js/visualizer.js" defer></script>
+  <script src="js/main.js"       defer></script>
+  <script src="js/tokenstore.js" defer></script>
+  <script src="js/menu.js"       defer></script>
+
+  <!-- Metadata component & logic -->
+  <script type="module" src="js/metadata.js" defer></script>
+
+  <style>
+    /* ── Table chrome ─────────────────────────────────────────── */
+    #csv-table thead th {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--bs-secondary-color);
+      padding-bottom: .5rem;
+      white-space: nowrap;
+    }
+
+    #csv-table thead th.col-req {
+      color: var(--bs-body-color);
+    }
+
+    #csv-table thead th.col-req::after {
+      content: ' *';
+      color: var(--bs-warning);
+      font-weight: 700;
+    }
+
+    /* ── Row animations ───────────────────────────────────────── */
+    #csv-rows tr {
+      animation: rowSlideIn .15s ease-out both;
+    }
+
+    @keyframes rowSlideIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Inputs ───────────────────────────────────────────────── */
+    #csv-table input[type="text"],
+    #csv-table input[type="date"] {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: .82rem;
+      background: transparent;
+      border-color: rgba(255,255,255,.1);
+      transition: border-color .15s, box-shadow .15s;
+    }
+
+    #csv-table input[type="text"]:focus,
+    #csv-table input[type="date"]:focus {
+      background: rgba(255,255,255,.04);
+    }
+
+    /* Required fields get a faint amber left-border accent */
+    #csv-table input.is-req {
+      border-left: 2px solid rgba(var(--bs-warning-rgb), .5);
+    }
+
+    #csv-table input.is-req:focus {
+      border-color: var(--bs-warning);
+      box-shadow: 0 0 0 .2rem rgba(var(--bs-warning-rgb), .15);
+    }
+
+    /* ── Row number gutter ────────────────────────────────────── */
+    .row-num {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: .72rem;
+      color: var(--bs-secondary-color);
+      user-select: none;
+      padding-right: .25rem;
+    }
+
+    /* ── Delete button ────────────────────────────────────────── */
+    .btn-del {
+      opacity: .35;
+      transition: opacity .15s;
+      line-height: 1;
+    }
+
+    .btn-del:not(:disabled):hover { opacity: 1; }
+    .btn-del:disabled              { opacity: .12; cursor: default; }
+
+    /* ── Add-row button ───────────────────────────────────────── */
+    #btn-add-row {
+      font-size: .82rem;
+      letter-spacing: .04em;
+    }
+
+    /* ── Upload area ──────────────────────────────────────────── */
+    #csv-upload-area {
+      border: 1.5px dashed rgba(255,255,255,.18);
+      border-radius: .375rem;
+      padding: .75rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      cursor: pointer;
+      transition: border-color .15s, background .15s;
+    }
+
+    #csv-upload-area:hover {
+      border-color: rgba(255,255,255,.38);
+      background: rgba(255,255,255,.03);
+    }
+
+    #csv-upload-area.drag-over {
+      border-color: var(--bs-info);
+      background: rgba(var(--bs-info-rgb), .08);
+    }
+
+    #csv-upload-label {
+      font-size: .82rem;
+      color: var(--bs-secondary-color);
+      margin: 0;
+    }
+
+    #csv-upload-label strong {
+      color: var(--bs-body-color);
+    }
+
+    /* ── Col widths ───────────────────────────────────────────── */
+    .col-num     { width: 2rem;  }
+    .col-type    { width: 13%;  }
+    .col-value   { width: 22%;  }
+    .col-cat     { width: 12%;  }
+    .col-date    { width: 10%;  }
+    .col-comment { /* fill */   }
+    .col-del     { width: 2.5rem; }
+  </style>
+</head>
+<body data-page="csv">
+  <div class="container-fluid">
+    <div class="row">
+
+      <!-- ── Main content ─────────────────────────────────────── -->
+      <div class="col-lg-8 col-md-7 col-sm-12">
+        <div id="menu-container"></div>
+
+        <div class="p-3">
+          <h2 class="mb-4">Report via CSV</h2>
+
+          <!-- Shared metadata accordion -->
+          <div id="metadata-container"></div>
+
+          <!-- CSV file upload -->
+          <div id="csv-upload-area" class="mb-3" onclick="document.getElementById('csv-file-input').click()"
+               title="Click to upload a CSV file, or drag and drop one here">
+            <i class="fa-solid fa-file-csv fa-lg text-info"></i>
+            <div>
+              <label id="csv-upload-label" style="cursor:pointer">
+                <strong>Upload a CSV file</strong> — or fill the table below manually
+              </label>
+              <div id="csv-upload-hint" style="font-size:.75rem;color:var(--bs-secondary-color);margin-top:.1rem">
+                Accepts .csv files. Headers: <code>type, value, category, first_seen, last_seen, comment</code>
+              </div>
+            </div>
+            <input type="file" id="csv-file-input" accept=".csv,.txt" class="d-none">
+          </div>
+
+          <!-- OR divider -->
+          <div class="d-flex align-items-center gap-2 mb-3" style="color:var(--bs-secondary-color);font-size:.75rem;letter-spacing:.08em;text-transform:uppercase">
+            <hr class="flex-grow-1 m-0" style="border-color:rgba(255,255,255,.1)">
+            <span>or fill manually</span>
+            <hr class="flex-grow-1 m-0" style="border-color:rgba(255,255,255,.1)">
+          </div>
+
+          <!-- Attribute table -->
+          <div class="card card-dark">
+            <div class="card-body p-0">
+              <div class="table-responsive">
+                <table class="table table-sm table-borderless mb-0" id="csv-table">
+                  <colgroup>
+                    <col class="col-num">
+                    <col class="col-type">
+                    <col class="col-value">
+                    <col class="col-cat">
+                    <col class="col-date">
+                    <col class="col-date">
+                    <col class="col-comment">
+                    <col class="col-del">
+                  </colgroup>
+                  <thead class="border-bottom border-secondary">
+                    <tr>
+                      <th class="col-num ps-3"></th>
+                      <th class="col-req">Type</th>
+                      <th class="col-req">Value</th>
+                      <th>Category</th>
+                      <th>First&nbsp;Seen</th>
+                      <th>Last&nbsp;Seen</th>
+                      <th>Comment</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody id="csv-rows"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Controls below table -->
+          <div class="mt-2 d-flex align-items-center gap-2">
+            <button id="btn-add-row" class="btn btn-outline-secondary btn-sm" onclick="addRow()">
+              <i class="fa-solid fa-plus me-1"></i>Add row
+            </button>
+            <button class="btn btn-primary btn-sm" onclick="submitCSV()">
+              Submit
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ── Token sidebar ─────────────────────────────────────── -->
+      <div class="col-lg-4 col-md-5 col-sm-12" id="tokenstore-container"></div>
+    </div>
+  </div>
+
+  <!-- ── Submission logic ──────────────────────────────────────── -->
+  <script type="module">
+    import { getMetadata } from './js/metadata.js';
+
+    const tbody = document.getElementById('csv-rows');
+
+    /* ── CSV value escaping ──────────────────────────────────── */
+    function escapeCSV(val) {
+      const s = String(val ?? '');
+      if (s.includes(',') || s.includes('"') || s.includes('\n') || s.includes('\r')) {
+        return '"' + s.replace(/"/g, '""') + '"';
+      }
+      return s;
+    }
+
+    /* ── Keep row numbers and delete-button state in sync ─────── */
+    function syncRows() {
+      const rows = tbody.querySelectorAll('tr');
+      rows.forEach((tr, i) => {
+        tr.querySelector('.row-num').textContent = i + 1;
+        tr.querySelector('.btn-del').disabled = rows.length === 1;
+      });
+    }
+
+    /* ── Tab out of last cell → add new row ──────────────────── */
+    function onLastCellTab(e) {
+      if (e.key === 'Tab' && !e.shiftKey) {
+        const rows = tbody.querySelectorAll('tr');
+        const lastRow = rows[rows.length - 1];
+        const inputs  = Array.from(lastRow.querySelectorAll('input'));
+        if (document.activeElement === inputs[inputs.length - 1]) {
+          e.preventDefault();
+          addRow();
+        }
+      }
+    }
+
+    /* ── Build a single table row ─────────────────────────────── */
+    function buildRow() {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="ps-3 align-middle"><span class="row-num">1</span></td>
+        <td><input type="text"  class="form-control form-control-sm is-req" data-col="type"       placeholder="ip-dst *"></td>
+        <td><input type="text"  class="form-control form-control-sm is-req" data-col="value"      placeholder="required *"></td>
+        <td><input type="text"  class="form-control form-control-sm"        data-col="category"   placeholder="optional"></td>
+        <td><input type="date"  class="form-control form-control-sm"        data-col="first_seen"></td>
+        <td><input type="date"  class="form-control form-control-sm"        data-col="last_seen"></td>
+        <td><input type="text"  class="form-control form-control-sm"        data-col="comment"    placeholder="optional"></td>
+        <td class="align-middle text-center pe-2">
+          <button type="button" class="btn btn-outline-danger btn-sm btn-del"
+                  onclick="removeRow(this)" title="Remove row" tabindex="-1">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </td>
+      `;
+      tr.addEventListener('keydown', onLastCellTab);
+      return tr;
+    }
+
+    /* ── Public: add a row ────────────────────────────────────── */
+    window.addRow = function () {
+      const tr = buildRow();
+      tbody.appendChild(tr);
+      syncRows();
+      tr.querySelector('[data-col="type"]').focus();
+    };
+
+    /* ── Public: remove a row ─────────────────────────────────── */
+    window.removeRow = function (btn) {
+      if (tbody.querySelectorAll('tr').length <= 1) return;
+      btn.closest('tr').remove();
+      syncRows();
+    };
+
+    /* ── Public: submit ───────────────────────────────────────── */
+    window.submitCSV = async function () {
+      const rows       = Array.from(tbody.querySelectorAll('tr'));
+      const attributes = [];
+
+      for (let i = 0; i < rows.length; i++) {
+        const get = col => rows[i].querySelector(`[data-col="${col}"]`).value.trim();
+
+        const type      = get('type');
+        const value     = get('value');
+        const category  = get('category');
+        const firstSeen = get('first_seen');
+        const lastSeen  = get('last_seen');
+        const comment   = get('comment');
+
+        const anyFilled = type || value || category || firstSeen || lastSeen || comment;
+        if (!anyFilled) continue;           // silently skip fully-empty rows
+
+        if (!type || !value) {
+          showToast(`Row ${i + 1}: "Type" and "Value" are both required.`, false);
+          return;
+        }
+
+        attributes.push({ type, value, category, first_seen: firstSeen, last_seen: lastSeen, comment });
+      }
+
+      if (attributes.length === 0) {
+        showToast('Please fill in at least one row with Type and Value.', false);
+        return;
+      }
+
+      /* Build CSV string */
+      const header = 'type,value,category,first_seen,last_seen,comment';
+      const lines  = attributes.map(a =>
+        ['type','value','category','first_seen','last_seen','comment']
+          .map(k => escapeCSV(a[k]))
+          .join(',')
+      );
+      const csvString = [header, ...lines].join('\n');
+
+      /* Metadata */
+      const metaContainer = document.getElementById('metadata-container');
+      const meta = (metaContainer && typeof getMetadata === 'function') ? getMetadata() : {};
+
+      /* Endpoint */
+      let endpoint = (typeof baseUrl !== 'undefined' && baseUrl)
+        ? `${baseUrl}/share/csv`
+        : `${window.location.origin}/share/csv`;
+      const carryToken = new URLSearchParams(window.location.search).get('token');
+      if (carryToken) endpoint += `?token=${encodeURIComponent(carryToken)}`;
+
+      try {
+        const res    = await fetch(endpoint, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ csv: csvString, optional: meta }),
+        });
+        const result = await res.json();
+
+        if (res.ok && result.status === 'ok') {
+          const tokens = getTokens();
+          if (!tokens.includes(result.token)) {
+            tokens.push(result.token);
+            saveTokens(tokens);
+          }
+          showToast('CSV report submitted successfully!');
+        } else {
+          showToast(result.detail || 'Submission failed.', false);
+        }
+      } catch (err) {
+        showToast('Network error or invalid response.', false);
+        console.error(err);
+      }
+    };
+
+    /* ── CSV file upload ──────────────────────────────────────── */
+    function parseCSVLine(line) {
+      // RFC-4180 aware single-line parser
+      const fields = [];
+      let cur = '', inQuote = false;
+      for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (inQuote) {
+          if (ch === '"' && line[i + 1] === '"') { cur += '"'; i++; }
+          else if (ch === '"')                    { inQuote = false; }
+          else                                    { cur += ch; }
+        } else {
+          if      (ch === '"') { inQuote = true; }
+          else if (ch === ',') { fields.push(cur); cur = ''; }
+          else                 { cur += ch; }
+        }
+      }
+      fields.push(cur);
+      return fields;
+    }
+
+    function loadCSVFile(file) {
+      const reader = new FileReader();
+      reader.onload = e => {
+        const text  = e.target.result.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+        const lines = text.split('\n').filter(l => l.trim() !== '');
+        if (lines.length < 2) {
+          showToast('CSV must have a header row and at least one data row.', false);
+          return;
+        }
+
+        const KNOWN_COLS = ['type','value','category','first_seen','last_seen','comment'];
+        const rawHeaders = parseCSVLine(lines[0]).map(h => h.trim().toLowerCase());
+
+        // Validate that at least type and value are present
+        if (!rawHeaders.includes('type') || !rawHeaders.includes('value')) {
+          showToast('CSV must have "type" and "value" columns.', false);
+          return;
+        }
+
+        // Clear existing rows and populate from file
+        tbody.innerHTML = '';
+        let loaded = 0;
+
+        for (let i = 1; i < lines.length; i++) {
+          const fields = parseCSVLine(lines[i]);
+          const row    = {};
+          rawHeaders.forEach((h, idx) => {
+            if (KNOWN_COLS.includes(h)) row[h] = (fields[idx] || '').trim();
+          });
+
+          // Skip completely empty data rows
+          if (KNOWN_COLS.every(k => !row[k])) continue;
+
+          const tr = buildRow();
+          KNOWN_COLS.forEach(col => {
+            const input = tr.querySelector(`[data-col="${col}"]`);
+            if (input && row[col]) input.value = row[col];
+          });
+          tbody.appendChild(tr);
+          loaded++;
+        }
+
+        if (loaded === 0) {
+          // No valid data rows — restore one blank row
+          tbody.appendChild(buildRow());
+          showToast('No data rows found in the CSV.', false);
+        } else {
+          syncRows();
+          const hint = document.getElementById('csv-upload-hint');
+          if (hint) hint.textContent = `Loaded ${loaded} row${loaded !== 1 ? 's' : ''} from "${file.name}" — review and submit below.`;
+          showToast(`Loaded ${loaded} row${loaded !== 1 ? 's' : ''} from CSV.`);
+        }
+
+        // Reset file input so the same file can be re-uploaded
+        document.getElementById('csv-file-input').value = '';
+      };
+      reader.onerror = () => showToast('Could not read the file.', false);
+      reader.readAsText(file);
+    }
+
+    /* ── Wire up file input and drag-and-drop ─────────────────── */
+    const fileInput   = document.getElementById('csv-file-input');
+    const uploadArea  = document.getElementById('csv-upload-area');
+
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files[0]) loadCSVFile(fileInput.files[0]);
+    });
+
+    uploadArea.addEventListener('dragover', e => {
+      e.preventDefault();
+      uploadArea.classList.add('drag-over');
+    });
+    uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('drag-over'));
+    uploadArea.addEventListener('drop', e => {
+      e.preventDefault();
+      uploadArea.classList.remove('drag-over');
+      const file = e.dataTransfer?.files[0];
+      if (file) loadCSVFile(file);
+    });
+
+    /* ── Seed the first row ───────────────────────────────────── */
+    window.addRow();
+  </script>
+
+  <script src="js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

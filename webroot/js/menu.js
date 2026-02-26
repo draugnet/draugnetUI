@@ -17,7 +17,7 @@ function setupTheme() {
     
 // ─── Load shared menu & highlight “report-freetext” ───────────────────────
 async function loadMenu() {
-    const res = await fetch("menu.html");
+    const res = await fetch("menu.html", { cache: "no-cache" });
     if (!res.ok) return;
     const html = await res.text();
     document.getElementById("menu-container").innerHTML = html;

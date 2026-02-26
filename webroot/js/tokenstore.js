@@ -87,7 +87,7 @@ function purgeTokens() {
 }
 
 async function loadTokenStore() {
-  const res = await fetch("tokenstore.html");
+  const res = await fetch("tokenstore.html", { cache: "no-cache" });
   if (!res.ok) return;
   const html = await res.text();
   document.getElementById("tokenstore-container").innerHTML = html;
