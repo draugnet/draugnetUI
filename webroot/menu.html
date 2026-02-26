@@ -1,35 +1,77 @@
 <!-- menu.html -->
-<nav class="nav nav-pills my-3 align-items-center">
-  <a class="nav-link" href="index.html" data-page="home">
+<nav class="site-nav">
+
+  <!-- Brand / logo -->
+  <a class="site-nav-brand" href="index.html" data-page="home">
     <img
       id="logo-img"
+      class="site-nav-logo"
       src="/img/logo_light_embed.png"
-      alt="Logo"
-      class="navbar-logo"
+      alt="Draugnet"
       data-logo-light="/img/logo_light_embed.png"
       data-logo-dark="/img/logo_dark_embed.png"
     />
   </a>
-  <a class="nav-link" href="object.html"                  data-page="object">Report via Object</a>
-  <a class="nav-link" href="misp.html"                    data-page="misp">Report via MISP</a>
-  <a class="nav-link" href="freetext.html"                data-page="freetext">Report via Freetext</a>
-  <a class="nav-link" href="stix.html"                    data-page="stix">Report via STIX</a>
-  <a class="nav-link" href="csv.html"                     data-page="csv">Report via CSV</a>
-  <a class="nav-link" href="view.html"                    data-page="view">View Existing Report</a>
 
-  <!-- Light/Dark mode toggle -->
-  <div class="form-check form-switch ms-auto">
-    <input
-      class="form-check-input"
-      type="checkbox"
-      id="theme-toggle"
-      aria-label="Toggle light/dark mode"
-    />
-    <label class="form-check-label" for="theme-toggle">Dark Mode</label>
+  <!-- Navigation links -->
+  <div class="site-nav-items">
+
+    <!-- Report dropdown -->
+    <div class="dropdown">
+      <button
+        class="site-nav-link dropdown-toggle"
+        type="button"
+        id="report-dropdown-toggle"
+        data-bs-toggle="dropdown"
+        aria-expanded="false"
+      >
+        Report
+        <i class="fa-solid fa-chevron-down ms-1"></i>
+      </button>
+      <ul class="dropdown-menu site-nav-dropdown" aria-labelledby="report-dropdown-toggle">
+        <li>
+          <a class="dropdown-item" href="object.html" data-page="object">
+            <i class="fa-solid fa-cube text-success"></i>Object
+          </a>
+        </li>
+        <li>
+          <a class="dropdown-item" href="misp.html" data-page="misp">
+            <i class="fa-solid fa-file-code text-warning"></i>MISP JSON
+          </a>
+        </li>
+        <li>
+          <a class="dropdown-item" href="freetext.html" data-page="freetext">
+            <i class="fa-solid fa-align-left text-info"></i>Freetext
+          </a>
+        </li>
+        <li>
+          <a class="dropdown-item" href="stix.html" data-page="stix">
+            <i class="fa-solid fa-circle-nodes text-secondary"></i>STIX
+          </a>
+        </li>
+        <li>
+          <a class="dropdown-item" href="csv.html" data-page="csv">
+            <i class="fa-solid fa-table-list text-primary"></i>CSV
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    <!-- View report -->
+    <a class="site-nav-link" href="view.html" data-page="view">
+      View Report
+    </a>
+
   </div>
+
+  <!-- Theme toggle (moon / sun icon button) -->
+  <button class="site-nav-theme" id="theme-toggle" title="Toggle light / dark mode">
+    <i id="theme-icon" class="fa-solid fa-moon"></i>
+  </button>
+
 </nav>
 
-<!-- Toast notification (shared via menu.html) -->
+<!-- Toast notification (shared component) -->
 <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
   <div
     id="toast"
@@ -50,4 +92,3 @@
     <div class="toast-body" id="toast-body">Message goes here.</div>
   </div>
 </div>
-

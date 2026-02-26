@@ -2,68 +2,118 @@
 <html lang="en" data-bs-theme="dark">
 <head>
   <meta charset="UTF-8" />
-  <title>Draugnet - View Report</title>
+  <title>Draugnet – View Report</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- CSS -->
   <link href="css/fontawesome.all.min.css" rel="stylesheet" />
   <link href="css/bootstrap.min.css" rel="stylesheet" />
-  <link rel="stylesheet" href="css/style.css">
-  <link rel="stylesheet" href="css/visualizer.css">
+  <link href="css/style.css" rel="stylesheet" />
+  <link href="css/visualizer.css" rel="stylesheet" />
 
-  <!-- Core UI Scripts -->
   <script src="js/bootstrap.bundle.min.js" defer></script>
   <script src="js/visualizer.js" defer></script>
   <script src="js/main.js" defer></script>
   <script src="js/tokenstore.js" defer></script>
   <script src="js/menu.js" defer></script>
+
+  <style>
+    /* ── Info banner injected by JS ─────────────────────────────── */
+    #report-info .card {
+      background: transparent;
+      border-color: var(--card-border);
+      font-size: .875rem;
+    }
+    #report-info .card-body {
+      padding: .6rem 1rem;
+      line-height: 1.7;
+    }
+    #report-info .copyable {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: .8rem;
+      word-break: break-all;
+    }
+
+    /* ── Main content sections (inside the p-0 card) ─────────────── */
+    #event-overview:not(:empty) {
+      padding: 1rem 1rem .5rem;
+      border-bottom: 1px solid var(--card-border);
+    }
+    #tree-container:not(:empty) {
+      padding: 1rem;
+      border-bottom: 1px solid var(--card-border);
+    }
+    #raw-json {
+      background: transparent;
+      border: none;
+      border-radius: 0 0 .5rem .5rem;
+      margin: 0;
+      padding: 1rem;
+      font-size: .8125rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    /* ── Toolbar layout ──────────────────────────────────────────── */
+    .view-toolbar {
+      display: flex;
+      align-items: center;
+      gap: .4rem;
+      flex-wrap: wrap;
+    }
+  </style>
 </head>
 <body data-page="view">
   <div class="container-fluid">
     <div class="row">
-       <!-- Main content column -->
-       <div class="col-lg-8 col-md-7 col-sm-12">
+
+      <!-- ── Main content ──────────────────────────────────────────── -->
+      <div class="col-lg-8 col-md-7 col-sm-12">
         <div id="menu-container"></div>
+
         <div class="p-3">
-          <div class="d-flex justify-content-between align-items-center mb-2">
-            <h2 class="mb-0">View Report</h2>
-            <div class="btn-toolbar">
-          
-              <div class="btn-group me-2">
-                <!-- non-clickable label -->
-                <button type="button"
-                        class="btn btn-info btn-sm"
-                        disabled>
-                  <i class="fa-solid fa-plus"></i> Add
+
+          <!-- Page header + toolbar -->
+          <div class="mb-3 d-flex align-items-start justify-content-between gap-3 flex-wrap">
+
+            <div>
+              <div class="d-flex align-items-center gap-2 mb-1">
+                <i class="fa-solid fa-eye fa-lg text-info" style="width:1.5rem;text-align:center"></i>
+                <h2 class="mb-0 h3">View Report</h2>
+              </div>
+              <p class="text-secondary mb-0" style="padding-left:2.1rem;font-size:.875rem">
+                Browse attributes, export in multiple formats, or append new intelligence to this report.
+              </p>
+            </div>
+
+            <div class="view-toolbar">
+
+              <!-- Add to report (sub-buttons revealed by JS when a token is present) -->
+              <div class="btn-group">
+                <button type="button" class="btn btn-outline-secondary btn-sm" disabled>
+                  <i class="fa-solid fa-plus me-1"></i>Add
                 </button>
-                <!-- actionable items -->
-                <button type="button"
-                        class="btn btn-outline-info btn-sm"
-                        id="add-misp"
-                        style="display:none">
-                  MISP JSON
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="add-misp" style="display:none">
+                  <i class="fa-solid fa-file-code me-1"></i>MISP JSON
                 </button>
-                <button type="button"
-                        class="btn btn-outline-info btn-sm"
-                        id="add-object"
-                        style="display:none">
-                  Object
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="add-object" style="display:none">
+                  <i class="fa-solid fa-cube me-1"></i>Object
                 </button>
-                <button type="button"
-                        class="btn btn-outline-info btn-sm"
-                        id="add-freetext"
-                        style="display:none">
-                  Freetext
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="add-freetext" style="display:none">
+                  <i class="fa-solid fa-align-left me-1"></i>Freetext
                 </button>
               </div>
-          
-              <!-- existing toggles -->
-              <div class="btn-group me-2">
-                <button class="btn btn-outline-primary btn-sm"      id="toggle-visual">🌳 Visual View</button>
-                <button class="btn btn-outline-secondary btn-sm"    id="toggle-raw">📄 Raw JSON</button>
+
+              <!-- View toggle -->
+              <div class="btn-group">
+                <button class="btn btn-outline-primary btn-sm" id="toggle-visual">
+                  <i class="fa-solid fa-diagram-project me-1"></i>Visual
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" id="toggle-raw">
+                  <i class="fa-solid fa-code me-1"></i>JSON
+                </button>
               </div>
-          
-              <!-- Download JSON + Download As… -->
+
+              <!-- Download -->
               <div class="btn-group">
                 <button
                   class="btn btn-outline-success btn-sm dropdown-toggle"
@@ -72,7 +122,7 @@
                   data-bs-toggle="dropdown"
                   aria-expanded="false"
                 >
-                  📥 Download as…
+                  <i class="fa-solid fa-download me-1"></i>Download
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="download-as-btn">
                   <li><a class="dropdown-item" href="#" data-format="json">JSON</a></li>
@@ -80,37 +130,38 @@
                   <li><a class="dropdown-item" href="#" data-format="suricata">Suricata</a></li>
                   <li><a class="dropdown-item" href="#" data-format="text">Text</a></li>
                   <li><a class="dropdown-item" href="#" data-format="stix">STIX</a></li>
-                  <li><a class="dropdown-item" href="#" data-format="stix2">STIX2</a></li>
+                  <li><a class="dropdown-item" href="#" data-format="stix2">STIX 2</a></li>
                 </ul>
               </div>
+
             </div>
           </div>
+
+          <!-- Token + timestamp info (populated by JS) -->
+          <div id="report-info" class="mb-3"></div>
+
+          <!-- Main report card -->
           <div class="card card-dark">
-            <div class="card-body">
-              <!-- Token & timestamp info -->
-              <div id="report-info"></div>
-  
-              <!-- NEW: MISP Overview panel -->
-              <div id="event-overview" class="mb-3"></div>
-  
-              <!-- Tree container (visual) -->
-              <div
-                id="tree-container"
-                class="border rounded p-2 mb-3"
-                style="background: var(--bs-body-bg);"
-              ></div>
-  
+            <div class="card-body p-0">
+
+              <!-- MISP event overview panel -->
+              <div id="event-overview"></div>
+
+              <!-- Visual attribute tree -->
+              <div id="tree-container"></div>
+
               <!-- Raw JSON -->
-              <pre
-                id="raw-json"
-                class="border rounded p-2"
-                style="background: var(--bs-body-bg); white-space: pre-wrap;"
-              ></pre>
-              </div>
-            </div> 
+              <pre id="raw-json"></pre>
+
+            </div>
+          </div>
+
         </div>
       </div>
+
+      <!-- ── Token sidebar ──────────────────────────────────────────── -->
       <div class="col-lg-4 col-md-5 col-sm-12" id="tokenstore-container"></div>
+
     </div>
   </div>
 </body>

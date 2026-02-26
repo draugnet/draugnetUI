@@ -5,56 +5,92 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Draugnet – Report via Freetext</title>
 
-  <!-- CSS -->
   <link href="css/fontawesome.all.min.css" rel="stylesheet" />
   <link href="css/bootstrap.min.css" rel="stylesheet" />
   <link href="css/style.css" rel="stylesheet" />
 
-  <!-- Core UI Scripts -->
   <script src="js/visualizer.js" defer></script>
   <script src="js/main.js"       defer></script>
   <script src="js/tokenstore.js" defer></script>
   <script src="js/menu.js"       defer></script>
-
-  <!-- Metadata component & logic -->
   <script type="module" src="js/metadata.js" defer></script>
+
+  <style>
+    .editor-textarea {
+      border: none;
+      border-radius: 0;
+      background: transparent;
+      resize: vertical;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: .875rem;
+      line-height: 1.65;
+      min-height: 220px;
+      color: inherit;
+      box-shadow: none !important;
+    }
+    .editor-textarea:focus { background: rgba(255,255,255,.02); }
+
+    .editor-footer {
+      border-top: 1px solid var(--card-border);
+      padding: .5rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: .5rem;
+      flex-wrap: wrap;
+    }
+  </style>
 </head>
 <body data-page="freetext">
   <div class="container-fluid">
     <div class="row">
-      <!-- Main content column -->
       <div class="col-lg-8 col-md-7 col-sm-12">
         <div id="menu-container"></div>
 
         <div class="p-3">
-          <h2 class="mb-4">Report via Freetext</h2>
 
-          <!-- Shared metadata UI -->
+          <!-- Page header -->
+          <div class="mb-4">
+            <div class="d-flex align-items-center gap-2 mb-1">
+              <i class="fa-solid fa-align-left fa-lg text-info" style="width:1.5rem;text-align:center"></i>
+              <h2 class="mb-0 h3">Report via Freetext</h2>
+            </div>
+            <p class="text-secondary mb-0" style="padding-left:2.1rem;font-size:.875rem">
+              Paste or type any text — emails, log snippets, advisories. MISP will extract indicators automatically.
+            </p>
+          </div>
+
+          <!-- Shared metadata -->
           <div id="metadata-container"></div>
 
-          <!-- Freetext input card -->
+          <!-- Editor card -->
           <div class="card card-dark">
-            <div class="card-body">
+            <div class="card-body p-0">
               <textarea
                 id="freetext-input"
-                class="form-control mb-3"
-                rows="10"
-                placeholder="Enter your report text here..."
+                class="form-control editor-textarea w-100 p-3"
+                rows="12"
+                placeholder="Paste or type your report here…"
               ></textarea>
-              <button id="submit-freetext-btn" class="btn btn-primary">
-                Submit
-              </button>
+              <div class="editor-footer">
+                <small class="text-secondary">
+                  <i class="fa-solid fa-circle-info me-1"></i>
+                  IPs, domains, hashes, URLs and other indicators will be extracted automatically.
+                </small>
+                <button id="submit-freetext-btn" class="btn btn-primary btn-sm">
+                  <i class="fa-solid fa-paper-plane me-1"></i>Submit
+                </button>
+              </div>
             </div>
           </div>
+
         </div>
       </div>
 
-      <!-- Token store column -->
       <div class="col-lg-4 col-md-5 col-sm-12" id="tokenstore-container"></div>
     </div>
   </div>
 
-  <!-- Freetext submission logic -->
   <script type="module">
     import { getMetadata } from './js/metadata.js';
 
@@ -112,6 +148,7 @@
         console.error(err);
       }
     }
+
     document.getElementById('submit-freetext-btn').addEventListener('click', submitFreetext);
   </script>
 

@@ -1,90 +1,163 @@
-ul.tree {
-    list-style: none;
-    padding-left: 0;
-    margin-left: 0;
-  }
-  ul.tree ul {
-    padding-left: 24px;
-    margin-left: 0;
-    border-left: 1px solid #ccc;
-  }
-  ul.tree li {
-    position: relative;
-    margin: 2px 0;
-  }
-  ul.tree li::before {
-    content: '';
-    position: absolute;
-    top: 18px;
-    left: 22px;
-    width: 12px;
-    height: 1px;
-    background: #ccc;
-  }
-  .toggle {
-    cursor: pointer;
-    display: inline-block;
-    width: 16px;
-    text-align: center;
-    margin-right: 4px;
-    user-select: none;
-    font-size: 0.8em;
-    line-height: 1;
-    position: relative;
-    top: 2px;
-  }
-  .toggle::before {
-    content: "▼";
-    position: absolute;
-    top: -10px;
-    left: -5px;
-    transition: transform 0.1s ease-in-out;
-  }
-  .collapsed > .toggle::before {
-    transform: rotate(-90deg);
-  }
-  .collapsed > ul {
-    display: none;
-  }
-  .badge-type {
-    margin-right: 4px;
-    font-size: 0.7em;
-  }
-  .node-card {
-    display: inline-flex !important;
-    align-items: center;
-    flex-wrap: nowrap;
-    position: relative;
-    cursor: default;
-    font-size: 0.85em;
-    padding: 4px 6px !important;
-    margin-bottom: 2px !important;
-  }
-  .tooltip-popup {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    background: var(--bs-body-bg);
-    border: 1px solid #ccc;
-    padding: 6px;
-    border-radius: 4px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-    white-space: nowrap;
-    display: none;
-    z-index: 100;
-    margin-top: 4px;
-    font-size: 0.8em;
-    color: var(--bs-body-color);
-  }
-  .node-card:hover .tooltip-popup {
-    display: block;
-  }
-  
-  /* visualizer.css */
+/* ══════════════════════════════════════════════════════════════════════
+   Visualizer — MISP event tree
+   ══════════════════════════════════════════════════════════════════════ */
 
-.node-card.highlight {
-    /* light red background + red border */
-    background-color: rgba(220, 53, 69, 0.15);
-    border: 1px solid var(--bs-danger);
-  }
-  
+/* Root tree list */
+ul.tree {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+/* Indented child lists — vertical guide line */
+ul.tree ul {
+  padding-left: 1.5rem;
+  margin-left: .625rem;
+  border-left: 1px solid var(--card-border);
+}
+
+/* Each tree item */
+ul.tree li {
+  position: relative;
+  margin: 1px 0;
+}
+
+/* Horizontal connector to each child */
+ul.tree ul > li::before {
+  content: '';
+  position: absolute;
+  top: .6rem;
+  left: -1.5rem;
+  width: 1.1rem;
+  height: 1px;
+  background: var(--card-border);
+}
+
+/* ── Row (the visible node strip) ─────────────────────────────────── */
+.tree-row {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  padding: .2rem .4rem;
+  border-radius: .3rem;
+  cursor: default;
+  position: relative;        /* tooltip positioning anchor */
+  transition: background .1s;
+  max-width: 100%;
+}
+.tree-row:hover {
+  background: var(--hover-bg);
+}
+
+/* ── Collapse toggle ──────────────────────────────────────────────── */
+.tree-toggle {
+  flex-shrink: 0;
+  width: .875rem;
+  text-align: center;
+  color: var(--bs-secondary-color);
+  line-height: 1;
+  cursor: pointer;
+  user-select: none;
+}
+.tree-toggle.no-children {
+  cursor: default;
+  opacity: 0;
+}
+.tree-toggle i {
+  font-size: .55rem;
+  display: inline-block;
+  transform: rotate(90deg);          /* default: expanded → chevron points down */
+  transition: transform .18s ease;
+}
+li.collapsed > .tree-row .tree-toggle i {
+  transform: rotate(0deg);           /* collapsed → chevron points right */
+}
+li.collapsed > ul {
+  display: none;
+}
+
+/* ── Type pill ────────────────────────────────────────────────────── */
+.tree-type-pill {
+  flex-shrink: 0;
+  display: inline-block;
+  font-size: .58rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  padding: .1rem .4rem;
+  border-radius: 99px;
+  white-space: nowrap;
+  /* defaults (overridden per-type below) */
+  background: rgba(108,117,125,.15);
+  color:      #adb5bd;
+  border: 1px solid rgba(108,117,125,.3);
+}
+
+/* Per-type pill colours */
+.tree-type-Event        { background: rgba(13,202,240,.12);  color: #0dcaf0;  border-color: rgba(13,202,240,.35);  }
+.tree-type-Attribute    { background: rgba(32,201,151,.12);  color: #20c997;  border-color: rgba(32,201,151,.35);  }
+.tree-type-Object       { background: rgba(110,168,254,.12); color: #6ea8fe;  border-color: rgba(110,168,254,.35); }
+.tree-type-Tag          { background: rgba(255,193,7,.12);   color: #ffc107;  border-color: rgba(255,193,7,.35);   }
+.tree-type-Galaxy       { background: rgba(208,169,245,.12); color: #d0a9f5;  border-color: rgba(208,169,245,.35); }
+.tree-type-Note         { background: rgba(173,181,189,.12); color: #adb5bd;  border-color: rgba(173,181,189,.35); }
+.tree-type-Opinion      { background: rgba(253,126,20,.12);  color: #fd7e14;  border-color: rgba(253,126,20,.35);  }
+.tree-type-Relationship { background: rgba(232,62,140,.12);  color: #f472b6;  border-color: rgba(232,62,140,.35);  }
+
+/* ── Node label (the value / name text) ──────────────────────────── */
+.tree-label {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: .75rem;
+  color: var(--app-fg);
+  white-space: nowrap;
+  line-height: 1.4;
+}
+
+/* ── Tooltip (appears on row hover) ──────────────────────────────── */
+.tree-tooltip {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 200;
+  background: var(--sidebar-bg, #1e1e1e);
+  border: 1px solid var(--card-border, #333);
+  border-radius: .375rem;
+  padding: .4rem .65rem;
+  box-shadow: 0 6px 24px rgba(0,0,0,.45);
+  min-width: 220px;
+  max-width: 440px;
+  font-size: .75rem;
+  pointer-events: none;
+  white-space: normal;
+}
+.tree-row:hover .tree-tooltip {
+  display: block;
+}
+.tree-tooltip-row {
+  display: flex;
+  gap: .5rem;
+  padding: .2rem 0;
+  border-bottom: 1px solid var(--card-border, #333);
+}
+.tree-tooltip-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+.tree-tooltip-key {
+  flex-shrink: 0;
+  min-width: 6rem;
+  color: var(--bs-secondary-color, #6c757d);
+  font-weight: 600;
+}
+.tree-tooltip-val {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: .7rem;
+  word-break: break-all;
+  color: var(--app-fg, #e0e0e0);
+}
+
+/* ── Highlight: items newer than original submission ──────────────── */
+.tree-row.highlight {
+  border-left: 2px solid rgba(220,53,69,.7);
+  padding-left: calc(.4rem - 2px);
+}

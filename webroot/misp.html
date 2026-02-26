@@ -5,55 +5,93 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Draugnet – Report via MISP</title>
 
-  <!-- CSS -->
   <link href="css/fontawesome.all.min.css" rel="stylesheet" />
   <link href="css/bootstrap.min.css" rel="stylesheet" />
   <link href="css/style.css" rel="stylesheet" />
 
-  <!-- Core UI Scripts -->
   <script src="js/visualizer.js" defer></script>
   <script src="js/main.js"       defer></script>
   <script src="js/tokenstore.js" defer></script>
   <script src="js/menu.js"       defer></script>
-
-  <!-- Shared Metadata component & logic -->
   <script type="module" src="js/metadata.js" defer></script>
+
+  <style>
+    .editor-textarea {
+      border: none;
+      border-radius: 0;
+      background: transparent;
+      resize: vertical;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: .875rem;
+      line-height: 1.65;
+      min-height: 220px;
+      color: inherit;
+      box-shadow: none !important;
+    }
+    .editor-textarea:focus { background: rgba(255,255,255,.02); }
+
+    .editor-footer {
+      border-top: 1px solid var(--card-border);
+      padding: .5rem 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: .5rem;
+      flex-wrap: wrap;
+    }
+  </style>
 </head>
 <body data-page="misp">
   <div class="container-fluid">
     <div class="row">
-      <!-- Main content -->
       <div class="col-lg-8 col-md-7 col-sm-12">
         <div id="menu-container"></div>
-        <div class="p-3">
-          <h2 class="mb-4">Report via MISP</h2>
 
-          <!-- Shared metadata UI -->
+        <div class="p-3">
+
+          <!-- Page header -->
+          <div class="mb-4">
+            <div class="d-flex align-items-center gap-2 mb-1">
+              <i class="fa-solid fa-file-code fa-lg text-warning" style="width:1.5rem;text-align:center"></i>
+              <h2 class="mb-0 h3">Report via MISP JSON</h2>
+            </div>
+            <p class="text-secondary mb-0" style="padding-left:2.1rem;font-size:.875rem">
+              Paste a <a href="https://www.misp-standard.org/rfc/misp-standard-core.html" target="_blank">MISP standard JSON</a>
+              document — the event will be ingested and merged into the community.
+            </p>
+          </div>
+
+          <!-- Shared metadata -->
           <div id="metadata-container"></div>
 
-          <!-- MISP JSON input card -->
-          <div class="card card-dark mb-3">
-            <div class="card-body">
+          <!-- Editor card -->
+          <div class="card card-dark">
+            <div class="card-body p-0">
               <textarea
                 id="misp-input"
-                class="form-control mb-3"
-                rows="10"
-                placeholder="Paste MISP event JSON here..."
+                class="form-control editor-textarea w-100 p-3"
+                rows="12"
+                placeholder='{"Event": {"info": "My report", "Attribute": [ … ], … }}'
               ></textarea>
-              <button id="submit-misp-btn" class="btn btn-primary">
-                Submit
-              </button>
+              <div class="editor-footer">
+                <small class="text-secondary">
+                  <i class="fa-solid fa-circle-info me-1"></i>
+                  Accepts a full MISP event JSON or a wrapped <code>{"Event": {…}}</code> envelope.
+                </small>
+                <button id="submit-misp-btn" class="btn btn-primary btn-sm">
+                  <i class="fa-solid fa-paper-plane me-1"></i>Submit
+                </button>
+              </div>
             </div>
           </div>
+
         </div>
       </div>
 
-      <!-- Token store sidebar -->
       <div class="col-lg-4 col-md-5 col-sm-12" id="tokenstore-container"></div>
     </div>
   </div>
 
-  <!-- MISP submission logic -->
   <script>
     async function submitMISP() {
       const rawText = document.getElementById("misp-input").value.trim();
@@ -76,7 +114,6 @@
         : {};
 
       try {
-        // Build share endpoint, carrying view-token if present
         let endpoint = baseUrl
           ? `${baseUrl}/share/misp`
           : `${window.location.origin}/share/misp`;
@@ -87,7 +124,6 @@
           endpoint += `${sep}token=${encodeURIComponent(carryToken)}`;
         }
 
-        // **Wrap metadata in an "optional" property**
         const payload = {
           event: eventData,
           optional: meta

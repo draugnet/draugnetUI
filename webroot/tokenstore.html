@@ -1,10 +1,41 @@
-<div class="sidebar">
-    <h5 class="mb-3">Token Store</h5>
-    <ul id="token-list" class="list-unstyled mb-3"></ul>
-    <div class="input-group mb-3">
-      <input type="text" id="new-token" class="form-control" placeholder="Add token" />
-      <button id="btn-add-token" class="btn btn-outline-light">Add</button>
+<div class="token-sidebar">
+
+  <!-- Header: title + count badge + utility buttons -->
+  <div class="ts-header">
+    <span class="ts-title">Token Store</span>
+    <span id="ts-count" class="ts-badge">0</span>
+    <div class="ts-header-actions">
+      <button id="btn-download-tokens" class="ts-header-btn" title="Download all tokens">
+        <i class="fa-solid fa-download"></i>
+      </button>
+      <button id="btn-purge-tokens" class="ts-header-btn" title="Purge all tokens">
+        <i class="fa-solid fa-trash"></i>
+      </button>
     </div>
-    <button id="btn-download-tokens" class="btn btn-outline-secondary w-100">Download All Tokens</button>
-    <button id="btn-purge-tokens" class="btn btn-outline-danger w-100">Purge All Tokens</button>
   </div>
+
+  <!-- Scrollable token list -->
+  <div class="ts-list-wrap">
+    <ul id="token-list" class="ts-list"></ul>
+    <div id="ts-empty" class="ts-empty">
+      <i class="fa-regular fa-folder-open"></i>
+      <span>No tokens stored yet</span>
+    </div>
+  </div>
+
+  <!-- Footer: add token -->
+  <div class="ts-footer">
+    <input
+      type="text"
+      id="new-token"
+      class="ts-input"
+      placeholder="Paste a token…"
+      autocomplete="off"
+      spellcheck="false"
+    />
+    <button id="btn-add-token" class="ts-add-btn" title="Add token">
+      <i class="fa-solid fa-plus"></i>
+    </button>
+  </div>
+
+</div>

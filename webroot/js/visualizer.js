@@ -96,111 +96,100 @@ function renderMISPEvent(event, {
 
         const type_explanations = {
             Event: 'A generic container, containing all other contextually linked objects.',
-            Attribute: 'An atomic data point, describing a single data-point/IoC with some metadata. Example: ip-dst:8.8.8.8, domain:starcraft2.com, sha256:1a9df47956c64a2302ad765aeefbb2a6e2bbcc30a47762733662b4c6c7796e2c.',
-            Object: 'A composite data structure, grouping multiple Attributes together based on rules defined by object templates. In most cases they allow to describe multiple aspects of concepts such as files, emails, etc.',
-            Tag: 'A string label, most often derived from a taxonomy in machine-tag format (such namespace:predicate="value")',
-            Galaxy: 'Galaxies are more complex knowledge base items that can be used as labelling. Galaxies are high level concepts, expressed via individual galaxy clusters. Each cluster will have a list of key values expressing the known/shared information associated with it. Example: Threat-actor:APT-29.',
-            GalaxyCluster: 'An individual cluster within a Galaxy, containing key-value pairs that describe a specific aspect of the Galaxy cluster.',
+            Attribute: 'An atomic data point, describing a single data-point/IoC with some metadata. Example: ip-dst:8.8.8.8, domain:starcraft2.com, sha256:1a9df47...',
+            Object: 'A composite data structure, grouping multiple Attributes together based on rules defined by object templates.',
+            Tag: 'A string label, most often derived from a taxonomy in machine-tag format (namespace:predicate="value").',
+            Galaxy: 'A high-level knowledge-base concept used as a label, expressed via clusters. Example: Threat-actor:APT-29.',
+            GalaxyCluster: 'An individual cluster within a Galaxy, containing key-value pairs describing a specific concept.',
             Note: 'An analyst note attached by a user to an element.',
             Opinion: 'An analyst opinion attached by a user to an element, expressing a subjective view on the data.',
             Relationship: 'An arbitrarily encoded relationship between two data points.'
-        }
-      
-        // Collapse toggle
-        const toggle = document.createElement('span');
-        toggle.className = 'toggle';
-        if (node.children.length) {
-          toggle.addEventListener('click', () => li.classList.toggle('collapsed'));
-        } else {
-          toggle.style.visibility = 'hidden';
-        }
-        li.append(toggle);
-      
-        // Card container
-        const card = document.createElement('div');
-        card.className = 'node-card card mb-2';
-      
-        // ── Compute node timestamp & apply highlight ────────────────────────
+        };
+
+        // ── Row ───────────────────────────────────────────────────────────
+        const row = document.createElement('div');
+        row.className = 'tree-row';
+
+        // ── Compute timestamp & apply highlight ───────────────────────────
         let ts = NaN;
         if (node.meta.timestamp) {
-          ts = Number(node.meta.timestamp);
+            ts = Number(node.meta.timestamp);
         } else if (node.meta.created) {
-          const date = new Date(node.meta.created);
-          ts = Math.floor(date.getTime() / 1000);
-          const tz = window.config?.timezone
-            || Intl.DateTimeFormat().resolvedOptions().timeZone;
-          const fmt = new Intl.DateTimeFormat('en-US', {
-            timeZone: tz,
-            timeZoneName: 'short'
-          });
-          const part = fmt.formatToParts(date).find(p => p.type === 'timeZoneName')?.value || '';
-          const m = part.match(/([+-]\d{1,2})(?::?(\d{2}))?/);
-          if (m) {
-            const hours = Number(m[1]);
-            const mins  = m[2] ? Number(m[2]) : 0;
-            ts += hours * 3600 + mins * 60;
-          }
+            const date = new Date(node.meta.created);
+            ts = Math.floor(date.getTime() / 1000);
+            const tz = window.config?.timezone
+                || Intl.DateTimeFormat().resolvedOptions().timeZone;
+            const fmt = new Intl.DateTimeFormat('en-US', {
+                timeZone: tz,
+                timeZoneName: 'short'
+            });
+            const part = fmt.formatToParts(date).find(p => p.type === 'timeZoneName')?.value || '';
+            const m = part.match(/([+-]\d{1,2})(?::?(\d{2}))?/);
+            if (m) {
+                const hours = Number(m[1]);
+                const mins  = m[2] ? Number(m[2]) : 0;
+                ts += hours * 3600 + mins * 60;
+            }
         }
         if (!isNaN(ts) && ts > highlightAfter && node.meta.objecttype !== 'Event') {
-          card.classList.add('highlight');
+            row.classList.add('highlight');
         }
-      
-        // ── Build content with Bootstrap grid ───────────────────────────────
-        const row = document.createElement('div');
-        row.className = 'row gx-2 align-items-center';
-      
-        // Badge column
-        const badgeCol = document.createElement('div');
-        badgeCol.className = 'col-auto';
-        const badge = document.createElement('span');
-        badge.className = 'badge bg-primary badge-type';
-        badge.textContent = node.meta.objecttype;
-        if (node.meta.objecttype === 'Attribute') {
-            if (!node.meta.object_relationsip) {
-                badge.textContent = node.meta.objecttype + '::' + node.meta.type;
-            } else {
-                badge.textContent = node.meta.objecttype + '::' + node.meta.object_relationship;
-            }
-        } else if (node.meta.objecttype === 'Galaxy') {
-            badge.textContent = node.meta.objecttype + '::' + node.meta.type;
-        }
-        badge.title = type_explanations[node.meta.objecttype];
-        badgeCol.appendChild(badge);
-        row.appendChild(badgeCol);
-      
-        // Text column
-        const textCol = document.createElement('div');
-        textCol.className = 'col';
-        const text = document.createElement('span');
-        text.textContent = node.name;
-        textCol.appendChild(text);
-        row.appendChild(textCol);
-      
-        // Tooltip column
-        const tipCol = document.createElement('div');
-        tipCol.className = 'col-auto position-relative';
-        const tip = document.createElement('div');
-        tip.className = 'tooltip-popup';
-        filteredEntries = filter_entries(node.meta);
-        tip.innerHTML = Object.entries(filteredEntries)
-          .map(([k, v]) => `<div><strong>${esc(k)}</strong>: ${esc(String(v))}</div>`)
-          .join('');
-        tipCol.appendChild(tip);
-        row.appendChild(tipCol);
-      
-        card.appendChild(row);
-        li.appendChild(card);
-      
-        // ── Recursively append children ────────────────────────────────────
+
+        // ── Collapse toggle (Font Awesome chevron) ────────────────────────
+        const toggle = document.createElement('span');
+        toggle.className = 'tree-toggle' + (node.children.length ? '' : ' no-children');
+        toggle.innerHTML = '<i class="fa-solid fa-chevron-right"></i>';
         if (node.children.length) {
-          const ul = document.createElement('ul');
-          ul.className = 'tree';
-          node.children.forEach(child => ul.appendChild(createNode(child)));
-          li.appendChild(ul);
+            toggle.addEventListener('click', () => li.classList.toggle('collapsed'));
         }
-      
+        row.appendChild(toggle);
+
+        // ── Type pill ─────────────────────────────────────────────────────
+        const type = node.meta.objecttype;
+        const pill = document.createElement('span');
+        let pillText = type.toLowerCase();
+        if      (type === 'Attribute')    pillText = node.meta.type || 'attr';
+        else if (type === 'Object')       pillText = node.meta.name || 'obj';
+        else if (type === 'Galaxy')       pillText = node.meta.type || 'galaxy';
+        else if (type === 'Relationship') pillText = 'rel';
+        pill.className = `tree-type-pill tree-type-${type}`;
+        pill.textContent = pillText;
+        pill.title = type_explanations[type] || type;
+        row.appendChild(pill);
+
+        // ── Label ─────────────────────────────────────────────────────────
+        const label = document.createElement('span');
+        label.className = 'tree-label';
+        label.textContent = node.name || '';
+        row.appendChild(label);
+
+        // ── Tooltip ───────────────────────────────────────────────────────
+        const filteredEntries = filter_entries(node.meta);
+        if (Object.keys(filteredEntries).length) {
+            const tooltip = document.createElement('div');
+            tooltip.className = 'tree-tooltip';
+            tooltip.innerHTML = Object.entries(filteredEntries)
+                .map(([k, v]) => `
+                    <div class="tree-tooltip-row">
+                        <span class="tree-tooltip-key">${esc(k)}</span>
+                        <span class="tree-tooltip-val">${esc(String(v))}</span>
+                    </div>`)
+                .join('');
+            row.appendChild(tooltip);
+        }
+
+        li.appendChild(row);
+
+        // ── Recursively append children ───────────────────────────────────
+        if (node.children.length) {
+            const ul = document.createElement('ul');
+            ul.className = 'tree';
+            node.children.forEach(child => ul.appendChild(createNode(child)));
+            li.appendChild(ul);
+        }
+
         return li;
-      }
+    }
 
       function filter_entries(meta) {
         fieldsToKeep = {

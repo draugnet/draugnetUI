@@ -3,94 +3,234 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Draugnet - Index</title>
+  <title>Draugnet</title>
 
-  <!-- CSS: bootstrap first, then fontawesome, then your overrides -->
   <link href="css/bootstrap.min.css"       rel="stylesheet" />
   <link href="css/fontawesome.all.min.css" rel="stylesheet" />
   <link href="css/style.css"               rel="stylesheet" />
 
-  <!-- Core UI Scripts -->
   <script src="js/visualizer.js"   defer></script>
   <script src="js/main.js"         defer></script>
   <script src="js/tokenstore.js"   defer></script>
   <script src="js/menu.js"         defer></script>
+
+  <style>
+    /* ── Index-specific styles ─────────────────────────────────── */
+    #app {
+      padding: 10px;
+    }
+
+    /* Hero */
+    .hero-logo {
+      height: 72px;
+      width: auto;
+      flex-shrink: 0;
+    }
+
+/* Feature cards */
+    .feature-icon {
+      width: 2rem;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .feature-card .card-body {
+      padding: 1rem 1.1rem;
+    }
+
+    .feature-title {
+      font-size: .82rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--bs-secondary-color);
+      margin-bottom: .35rem;
+    }
+
+    .feature-text {
+      font-size: .87rem;
+      margin-bottom: 0;
+      line-height: 1.55;
+    }
+
+    /* API section */
+    .api-item {
+      display: flex;
+      gap: .6rem;
+      align-items: baseline;
+      padding: .4rem 0;
+      border-bottom: 1px solid var(--card-border);
+      font-size: .875rem;
+    }
+
+    .api-item:last-child {
+      border-bottom: none;
+    }
+
+    .api-label {
+      font-size: .72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      color: var(--bs-secondary-color);
+      white-space: nowrap;
+      min-width: 7rem;
+      padding-top: .05rem;
+    }
+  </style>
 </head>
 <body data-page="index">
   <div class="container-fluid">
     <div class="row">
-      <!-- Main content column -->
+
+      <!-- ── Main content ─────────────────────────────────────────── -->
       <div class="col-lg-8 col-md-7 col-sm-12">
-        <!-- Shared menu placeholder -->
         <div id="menu-container"></div>
-        <div id="app" class="p-3">
-          <div class="card card-dark mb-3 text-center mx-auto" style="max-width: 50%;">
-            <div class="card-header">Draugnet</div>
-            <img class="card-img-top" id="index-draugnet-image" data-dark-src="img/logo_horizontal_thin_dark.png" data-light-src="img/logo_horizontal_thin_light.png" src="img/logo_horizontal_thin_dark.png"></img>
-            <div class="card-body">
-                Visit the <a href="https://github.com/draugnet/draugnet" target="_blank">draugnet</a> or the <a href="https://github.com/draugnet/draugnetUI" target="_blank">draugnetUI</a> project's github pages.
-            </div>
-          </div>
-          <div class="card card-dark mb-3 text-center mx-auto" style="max-width: 50%;">
-            <div class="card-header">
-              How it works
-            </div>
-            <div class="card-body">
-              Draugnet is a simple API tool that connects to a <a href="https://misp-project.org">MISP community</a> and allows users to submit reports in various formats that will be conveyed to MISP. It will generate a token for each submission that users can use to retrieve their report along with any updates / comments / new data that the community has added.
-            </div>
-          </div>
-          <div class="card card-dark mb-3 text-center mx-auto" style="max-width: 50%;"">
-            <div class="card-header">
-              Why?
-            </div>
-            <div class="card-body">
-              It's an easy way to report to a CSIRT, a central authority of a sharing community or a partner that you wish to share with - without first negotiating access. It also allows the submitter to keep up to date with changes made to the report and can act as a lightweight collaboration tool.
-            </div>
-          </div>
-          <div class="card card-dark mb-3 text-center mx-auto" style="max-width: 50%;"">
-            <div class="card-header">
-              How to use it?
-            </div>
-            <div class="card-body">
-              You can report via MISP JSON, via a MISP object, or via free text. You can also view existing reports that you have submitted.
-            </div>
-          </div>
-          <div class="card card-dark mb-3 text-center mx-auto" style="max-width: 50%;"">
-            <div class="card-header">
-              Anonymity
-            </div>
-            <div class="card-body">
-              In fact, Draugnet supports fully anonymous submissions of data this way. Draugnet only keeps the link between the MISP event UUID generated from the reporting and the token handed back to the user.
-            </div>
-          </div>
-          <div class="card card-dark mb-3 text-center mx-auto" style="max-width: 50%;"">
-            <div class="card-header">
-              API
-            </div>
-            <div class="card-body">
-              <div class="container-fluid">
-                <p>Draugnet's UI is relying on a FastAPI based back-end to interact with the MISP community behind it. You can directly access this back-end via <span id="api-link"></span></p>
-                <p><b>OpenAPI spec</b></p>
-                <p>simply use a browser and navigate to the <span id="api-docs-link"></span> and you will get a list of all supported endpoints.</p>
-                <p><b>Supported submission formats</b></p>
-                <p>You can submit information as plain text, a <a href="https://www.misp-standard.org/rfc/misp-standard-core.html">MISP standard JSON document</a> or create topical data using templates derived from the <a href="https://www.misp-project.org/objects.html">MISP object definitions</a>.</p>
-                <p><b>Supported retrieval formats</b></p>
-                <p>By default, you will be receiving updates to your data in the MISP JSON format. But you can optionally also fetch the data in any of the supported formats of MISP (such as CSV, Suricata, STIX2, Nibbler).</p>
-                <p><b>Updating reports</b></p>
-                <p>You can always append new information using any of the supported submission formats by POSTing your new data to be shared to the endpoint you'd use for submissions, but with your token appended as a query string (?token={token})</p>
+
+        <div id="app">
+
+          <!-- ── Hero ───────────────────────────────────────────────── -->
+          <div class="card card-dark mb-3">
+            <div class="card-body d-flex align-items-center gap-4 p-4 flex-wrap">
+              <img
+                id="index-draugnet-image"
+                class="hero-logo"
+                data-dark-src="img/logo_horizontal_thin_dark.png"
+                data-light-src="img/logo_horizontal_thin_light.png"
+                src="img/logo_horizontal_thin_dark.png"
+                alt="Draugnet"
+              />
+<div class="flex-grow-1">
+                <p class="mb-2" style="line-height:1.6">
+                  Draugnet connects to a <a href="https://misp-project.org" target="_blank">MISP community</a>
+                  and lets anyone submit threat intelligence in multiple formats — no account required.
+                  Each submission gets a token you can use to retrieve the report and any updates the
+                  community adds to it.
+                </p>
+                <div class="d-flex gap-2 flex-wrap">
+                  <a href="https://github.com/draugnet/draugnet" target="_blank"
+                     class="btn btn-sm btn-outline-secondary">
+                    <i class="fa-brands fa-github me-1"></i>Draugnet API
+                  </a>
+                  <a href="https://github.com/draugnet/draugnetUI" target="_blank"
+                     class="btn btn-sm btn-outline-secondary">
+                    <i class="fa-brands fa-github me-1"></i>Draugnet UI
+                  </a>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+
+          <!-- ── Feature grid ────────────────────────────────────────── -->
+          <div class="row g-3 mb-3">
+
+            <div class="col-sm-6">
+              <div class="card card-dark feature-card h-100">
+                <div class="card-body">
+                  <div class="d-flex align-items-center gap-2 mb-2">
+                    <span class="feature-icon"><i class="fa-solid fa-handshake text-info"></i></span>
+                    <div class="feature-title mb-0">Why Draugnet?</div>
+                  </div>
+                  <p class="feature-text">
+                    An easy way to report to a CSIRT, a central authority of a sharing community,
+                    or a partner — without negotiating access first. It also lets you keep up to
+                    date with changes made to your report and can act as a lightweight collaboration tool.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-sm-6">
+              <div class="card card-dark feature-card h-100">
+                <div class="card-body">
+                  <div class="d-flex align-items-center gap-2 mb-2">
+                    <span class="feature-icon"><i class="fa-solid fa-user-secret text-warning"></i></span>
+                    <div class="feature-title mb-0">Anonymity</div>
+                  </div>
+                  <p class="feature-text">
+                    Draugnet supports fully anonymous submissions. The only link it stores is between
+                    the MISP event UUID generated from your report and the token handed back to you —
+                    no identity, no account, no tracking.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-sm-6">
+              <div class="card card-dark feature-card h-100">
+                <div class="card-body">
+                  <div class="d-flex align-items-center gap-2 mb-2">
+                    <span class="feature-icon"><i class="fa-solid fa-file-import text-success"></i></span>
+                    <div class="feature-title mb-0">Submission formats</div>
+                  </div>
+                  <p class="feature-text">
+                    Submit as plain freetext, a
+                    <a href="https://www.misp-standard.org/rfc/misp-standard-core.html" target="_blank">MISP JSON</a>
+                    document, a <a href="https://www.misp-project.org/objects.html" target="_blank">MISP object</a>
+                    template, a STIX 2.x bundle, or a structured CSV — whichever fits your workflow.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-sm-6">
+              <div class="card card-dark feature-card h-100">
+                <div class="card-body">
+                  <div class="d-flex align-items-center gap-2 mb-2">
+                    <span class="feature-icon"><i class="fa-solid fa-arrows-rotate text-secondary"></i></span>
+                    <div class="feature-title mb-0">Updating reports</div>
+                  </div>
+                  <p class="feature-text">
+                    Append new information to an existing report at any time using any submission format.
+                    POST to the same endpoint and include your token as a query parameter
+                    (<code>?token=…</code>) to update rather than create.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- ── API reference ───────────────────────────────────────── -->
+          <div class="card card-dark">
+            <div class="card-body p-0">
+              <div class="px-3 pt-3 pb-2 d-flex align-items-center gap-2 border-bottom border-secondary">
+                <i class="fa-solid fa-code text-secondary"></i>
+                <span style="font-size:.82rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--bs-secondary-color)">API Reference</span>
+              </div>
+              <div class="px-3 py-1">
+
+                <div class="api-item">
+                  <span class="api-label">Endpoint</span>
+                  <span id="api-link" class="text-break"></span>
+                </div>
+
+                <div class="api-item">
+                  <span class="api-label">OpenAPI</span>
+                  <span><span id="api-docs-link"></span> — interactive docs for all supported endpoints</span>
+                </div>
+
+                <div class="api-item">
+                  <span class="api-label">Retrieval</span>
+                  <span>
+                    Fetch your report in MISP JSON, CSV, Suricata, STIX 2, or plain text by passing
+                    <code>format=&lt;fmt&gt;</code> to <code>/retrieve</code>.
+                  </span>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /#app -->
       </div>
 
-      <!-- Token store column -->
+      <!-- ── Token sidebar ─────────────────────────────────────────── -->
       <div class="col-lg-4 col-md-5 col-sm-12" id="tokenstore-container"></div>
+
     </div>
   </div>
 
-
-  <!-- Bootstrap JS bundle (must come after your UI scripts) -->
   <script src="js/bootstrap.bundle.min.js" defer></script>
 </body>
 </html>

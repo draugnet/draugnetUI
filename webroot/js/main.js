@@ -210,26 +210,10 @@ window.addEventListener("load", async () => {
       addMispBtn.onclick       = () => window.location = `misp.html?token=${encodeURIComponent(token)}`;
     }
 
-    // if no token, show friendly message and bail out
-    if (!token) {
-      const main = document.querySelector('.p-3');
-      main.innerHTML = `
-        <h2 class="mb-0">View Report</h2>
-        <p>
-          View your previously submitted reports by clicking on the appropriate token
-          from the token store to the right.
-        </p>
-      `;
-      return;
-    }
-
     // With a token present, default to visual view
-    initToggles();
-    loadReport();
-    document.getElementById("toggle-visual").click();
-    document.addEventListener('DOMContentLoaded', () => {
-      updateIndexLogo();
-    });
+    if (token) {
+      document.getElementById("toggle-visual").click();
+    }
   });
 
 

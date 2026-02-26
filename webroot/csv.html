@@ -152,7 +152,16 @@
         <div id="menu-container"></div>
 
         <div class="p-3">
-          <h2 class="mb-4">Report via CSV</h2>
+          <!-- Page header -->
+          <div class="mb-4">
+            <div class="d-flex align-items-center gap-2 mb-1">
+              <i class="fa-solid fa-table-list fa-lg text-primary" style="width:1.5rem;text-align:center"></i>
+              <h2 class="mb-0 h3">Report via CSV</h2>
+            </div>
+            <p class="text-secondary mb-0" style="padding-left:2.1rem;font-size:.875rem">
+              Upload a CSV file or build a table row by row — each line becomes a MISP attribute.
+            </p>
+          </div>
 
           <!-- Shared metadata accordion -->
           <div id="metadata-container"></div>
@@ -218,7 +227,7 @@
               <i class="fa-solid fa-plus me-1"></i>Add row
             </button>
             <button id="btn-submit-csv" class="btn btn-primary btn-sm">
-              Submit
+              <i class="fa-solid fa-paper-plane me-1"></i>Submit
             </button>
           </div>
 

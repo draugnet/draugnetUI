@@ -5,24 +5,132 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Draugnet – Report via Object</title>
 
-  <!-- CSS -->
   <link href="css/fontawesome.all.min.css" rel="stylesheet" />
   <link href="css/bootstrap.min.css" rel="stylesheet" />
   <link href="css/style.css" rel="stylesheet" />
 
-  <!-- Core UI Scripts -->
   <script src="js/main.js"       defer></script>
   <script src="js/tokenstore.js" defer></script>
   <script src="js/menu.js"       defer></script>
   <script src="js/visualizer.js" defer></script>
-
-  <!-- Shared Metadata -->
   <script type="module" src="js/metadata.js" defer></script>
 
   <style>
-    /* Style adjustments for the datalist dropdown */
+    /* ── Custom template combobox ────────────────────────────────── */
+    .tmpl-combobox { position: relative; }
+
+    .tmpl-combobox-wrap {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      background: var(--input-bg);
+      border: 1px solid var(--input-border);
+      border-radius: .375rem;
+      padding: 0 .75rem;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .tmpl-combobox-wrap:focus-within {
+      border-color: var(--bs-primary);
+      box-shadow: 0 0 0 .2rem rgba(var(--bs-primary-rgb), .15);
+    }
+    .tmpl-combobox-wrap .fa-magnifying-glass {
+      color: var(--placeholder);
+      font-size: .8rem;
+      flex-shrink: 0;
+    }
     #template-select {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      padding: .5rem 0;
+      font-size: .875rem;
+      color: var(--app-fg);
+      min-width: 0;
+    }
+    #template-select::placeholder { color: var(--placeholder); }
+
+    .tmpl-clear {
+      background: none;
+      border: none;
+      padding: .15rem .1rem;
+      color: var(--placeholder);
+      cursor: pointer;
+      font-size: .75rem;
+      line-height: 1;
+      flex-shrink: 0;
+      display: none;
+    }
+    .tmpl-clear:hover { color: var(--app-fg); }
+
+    .tmpl-dropdown {
+      display: none;
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      right: 0;
+      z-index: 300;
+      background: var(--sidebar-bg);
+      border: 1px solid var(--card-border);
+      border-radius: .4rem;
+      box-shadow: 0 6px 24px rgba(0,0,0,.4);
+      overflow: hidden;
+    }
+    .tmpl-list {
+      max-height: 280px;
+      overflow-y: auto;
+      padding: .3rem 0;
+    }
+    .tmpl-item {
+      padding: .4rem .85rem;
+      font-size: .82rem;
+      color: var(--bs-secondary-color);
+      cursor: pointer;
+      transition: background .08s, color .08s;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .tmpl-item:hover,
+    .tmpl-item.tmpl-focused {
+      background: var(--hover-bg);
+      color: var(--app-fg);
+    }
+    .tmpl-item mark {
+      background: rgba(var(--bs-warning-rgb), .25);
+      color: inherit;
+      border-radius: 2px;
+      padding: 0 1px;
+    }
+    .tmpl-empty {
+      padding: .75rem .85rem;
+      font-size: .82rem;
+      color: var(--placeholder);
+      text-align: center;
+    }
+
+    /* Template info banner — only visible once a template is loaded */
+    #template-header:not(:empty) {
+      border: 1px solid var(--card-border);
+      border-left: 3px solid var(--bs-info);
+      border-radius: .5rem;
+      padding: .7rem 1rem;
       margin-bottom: 1rem;
+    }
+    #template-header h3 {
+      font-size: .95rem;
+      font-weight: 600;
+      margin-bottom: .15rem;
+    }
+    #template-header p {
+      font-size: .85rem;
+      color: var(--bs-secondary-color);
+      margin-bottom: 0;
+    }
+
+    /* Dynamic form submit button */
+    #report-form .btn-primary {
+      margin-top: .5rem;
     }
   </style>
 </head>
@@ -31,31 +139,63 @@
     <div class="row">
       <div class="col-lg-8 col-md-7 col-sm-12">
         <div id="menu-container"></div>
+
         <div class="p-3">
-          <h2 class="mb-4">Report via Object</h2>
+
+          <!-- Page header -->
+          <div class="mb-4">
+            <div class="d-flex align-items-center gap-2 mb-1">
+              <i class="fa-solid fa-cube fa-lg text-success" style="width:1.5rem;text-align:center"></i>
+              <h2 class="mb-0 h3">Report via Object</h2>
+            </div>
+            <p class="text-secondary mb-0" style="padding-left:2.1rem;font-size:.875rem">
+              Fill in a structured <a href="https://www.misp-project.org/objects.html" target="_blank">MISP object template</a>
+              — each field maps directly to a typed MISP attribute.
+            </p>
+          </div>
 
           <!-- Shared metadata -->
           <div id="metadata-container"></div>
 
-          <!-- Filterable dropdown for templates -->
-          <div class="mb-3">
-            <label for="template-select" class="form-label">Select Template</label>
-            <input
-              class="form-control"
-              list="template-options"
-              id="template-select"
-              placeholder="Type to search…"
-            />
-            <datalist id="template-options"></datalist>
+          <!-- Template selector card -->
+          <div class="card card-dark mb-3">
+            <div class="card-body">
+              <label for="template-select" class="form-label fw-semibold mb-2" style="font-size:.875rem">
+                Select template
+              </label>
+              <div class="tmpl-combobox" id="tmpl-combobox">
+                <div class="tmpl-combobox-wrap">
+                  <i class="fa-solid fa-magnifying-glass"></i>
+                  <input
+                    type="text"
+                    id="template-select"
+                    placeholder="Type to search templates…"
+                    autocomplete="off"
+                    spellcheck="false"
+                  />
+                  <button class="tmpl-clear" id="tmpl-clear" tabindex="-1" aria-label="Clear">
+                    <i class="fa-solid fa-xmark"></i>
+                  </button>
+                </div>
+                <div class="tmpl-dropdown" id="tmpl-dropdown">
+                  <div class="tmpl-list" id="tmpl-list"></div>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <!-- Template header -->
-          <div id="template-header" class="mb-3"></div>
+          <!-- Template info banner (populated by JS) -->
+          <div id="template-header"></div>
 
-          <!-- Dynamic form -->
+          <!-- Dynamic form (populated by JS) -->
           <div class="card card-dark">
-            <div class="card-body" id="template-form"></div>
+            <div class="card-body" id="template-form">
+              <p class="text-secondary mb-0" style="font-size:.875rem">
+                <i class="fa-solid fa-arrow-up me-1"></i>Choose a template above to reveal the form.
+              </p>
+            </div>
           </div>
+
         </div>
       </div>
 
@@ -77,7 +217,7 @@ async function loadTemplate(name) {
     const requiredFields = template.required      || [];
     const requiredOneOf  = template.requiredOneOf || [];
 
-    // Populate header
+    // Populate header banner
     const headerEl = document.getElementById("template-header");
     headerEl.innerHTML = '';
     const h3 = document.createElement('h3');
@@ -175,14 +315,10 @@ async function loadTemplate(name) {
 
       // ── MULTIPLE SUPPORT ─────────────────────────────────────
       if (def.multiple) {
-        // wrap first input + Add button
         const multiWrap = document.createElement("div");
         multiWrap.className = "multiple-container";
-
-        // append the initial input
         multiWrap.appendChild(inputEl);
 
-        // Add another button
         const addBtn = document.createElement("button");
         addBtn.type = "button";
         addBtn.className = "btn btn-sm btn-outline-secondary mt-1";
@@ -193,10 +329,8 @@ async function loadTemplate(name) {
           multiWrap.insertBefore(clone, addBtn);
         });
         multiWrap.appendChild(addBtn);
-
         group.appendChild(multiWrap);
       } else {
-        // single‐entry
         group.appendChild(inputEl);
       }
 
@@ -206,11 +340,11 @@ async function loadTemplate(name) {
     // Submit button
     const submitBtn = document.createElement("button");
     submitBtn.type = "submit";
-    submitBtn.className = "btn btn-primary";
-    submitBtn.textContent = "Submit";
+    submitBtn.className = "btn btn-primary btn-sm";
+    submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane me-1"></i>Submit';
     form.appendChild(submitBtn);
 
-    // onsubmit: enforce requiredOneOf, collect under data, wrap metadata & template_name & optional
+    // onsubmit handler
     form.onsubmit = async e => {
       e.preventDefault();
 
@@ -234,9 +368,7 @@ async function loadTemplate(name) {
       new FormData(form).forEach((val, key) => {
         if (val === "__custom__") return;
         const custom = form.elements[`${key}_custom`]?.value;
-        // If multiple, FormData.forEach will provide multiple entries for same key
         if (templateData[key]) {
-          // already array? push
           Array.isArray(templateData[key])
             ? templateData[key].push(custom || val)
             : (templateData[key] = [templateData[key], custom || val]);
@@ -255,7 +387,7 @@ async function loadTemplate(name) {
         optional: meta
       };
 
-      // 4) POST to backend, carrying view-token if present
+      // 4) POST to backend
       let shareUrl = `${baseUrl || window.location.origin}/share/objects`;
       const params    = new URLSearchParams(window.location.search);
       const carryToken = params.get("token");
@@ -271,21 +403,11 @@ async function loadTemplate(name) {
           body: JSON.stringify(payload)
         });
 
-        let error = null;
         let json;
-        try {
-          json = await resp.json();
-        } catch (_) {
-          json = {};
-        }
+        try { json = await resp.json(); } catch (_) { json = {}; }
 
-        // Extract any error detail
-        const detail = json.detail
-          || json.error
-          || json.message
-          || null;
+        const detail = json.detail || json.error || json.message || null;
 
-        // 5) Handle response
         if (resp.ok && json.status === "ok") {
           const tokens = getTokens();
           if (!tokens.includes(json.token)) {
@@ -294,20 +416,14 @@ async function loadTemplate(name) {
           }
           showToast("Report submitted successfully!");
         } else {
-          // server returned 4xx/5xx or status!=="ok"
-          const msg = detail
-            ? `Submission failed: ${detail}`
-            : `Submission failed (HTTP ${resp.status})`;
-          showToast(msg, false);
+          showToast(detail ? `Submission failed: ${detail}` : `Submission failed (HTTP ${resp.status})`, false);
         }
       } catch (networkErr) {
-        // fetch() itself threw (network down, CORS, etc)
         console.error("Network error:", networkErr);
         showToast("Network error – please try again.", false);
       }
     };
 
-    // Render form
     container.appendChild(form);
 
   } catch (err) {
@@ -315,8 +431,7 @@ async function loadTemplate(name) {
   }
 }
 
-
-  async function loadTemplates() {
+async function loadTemplates() {
   if (!baseUrl) await loadConfig();
   const endpoint = `${baseUrl || window.location.origin}/object_templates`;
 
@@ -325,43 +440,142 @@ async function loadTemplate(name) {
     if (!res.ok) throw new Error(`Failed to fetch templates: ${res.status}`);
     const templates = await res.json();
 
-    // Populate the <datalist>
-    const dataList = document.getElementById("template-options");
-    dataList.innerHTML = "";
-    templates.forEach(name => {
-      const opt = document.createElement("option");
-      opt.value = name;
-      dataList.appendChild(opt);
+    const input    = document.getElementById('template-select');
+    const dropdown = document.getElementById('tmpl-dropdown');
+    const listEl   = document.getElementById('tmpl-list');
+    const clearBtn = document.getElementById('tmpl-clear');
+    let focusIdx   = -1;
+
+    // ── Helpers ───────────────────────────────────────────────────
+    function escHtml(str) {
+      const d = document.createElement('div');
+      d.textContent = str;
+      return d.innerHTML;
+    }
+
+    function highlightMatch(text, query) {
+      if (!query) return escHtml(text);
+      const lo  = text.toLowerCase();
+      const idx = lo.indexOf(query.toLowerCase());
+      if (idx === -1) return escHtml(text);
+      return escHtml(text.slice(0, idx))
+        + '<mark>' + escHtml(text.slice(idx, idx + query.length)) + '</mark>'
+        + escHtml(text.slice(idx + query.length));
+    }
+
+    // ── Render filtered list ──────────────────────────────────────
+    function renderList(query) {
+      const q        = (query || '').toLowerCase();
+      const filtered = templates.filter(t => t.toLowerCase().includes(q));
+      focusIdx       = -1;
+      listEl.innerHTML = '';
+
+      if (filtered.length === 0) {
+        const msg = document.createElement('div');
+        msg.className   = 'tmpl-empty';
+        msg.textContent = 'No matching templates';
+        listEl.appendChild(msg);
+        return;
+      }
+
+      filtered.forEach(name => {
+        const item = document.createElement('div');
+        item.className    = 'tmpl-item';
+        item.dataset.name = name;
+        item.innerHTML    = highlightMatch(name, query);
+        item.addEventListener('mousedown', e => {
+          e.preventDefault(); // keep focus on input
+          selectTemplate(name);
+        });
+        listEl.appendChild(item);
+      });
+    }
+
+    // ── Open / close ──────────────────────────────────────────────
+    function openDropdown() {
+      renderList(input.value.trim());
+      dropdown.style.display = 'block';
+    }
+
+    function closeDropdown() {
+      dropdown.style.display = 'none';
+      focusIdx = -1;
+    }
+
+    // ── Select a template ─────────────────────────────────────────
+    function selectTemplate(name) {
+      input.value            = name;
+      clearBtn.style.display = 'block';
+      closeDropdown();
+      loadTemplate(name);
+    }
+
+    // ── Keyboard focus movement ───────────────────────────────────
+    function moveFocus(delta) {
+      const items = listEl.querySelectorAll('.tmpl-item');
+      if (!items.length) return;
+      items[focusIdx]?.classList.remove('tmpl-focused');
+      focusIdx = Math.max(0, Math.min(items.length - 1, focusIdx + delta));
+      items[focusIdx].classList.add('tmpl-focused');
+      items[focusIdx].scrollIntoView({ block: 'nearest' });
+    }
+
+    // ── Event wiring ──────────────────────────────────────────────
+    input.addEventListener('focus', openDropdown);
+
+    input.addEventListener('input', () => {
+      const q = input.value.trim();
+      clearBtn.style.display = q ? 'block' : 'none';
+      openDropdown();
     });
 
-    // Wire the input to load the selected template
-    const input = document.getElementById("template-select");
-    input.value = "";  // clear any leftover
-    // On change (e.g. select via click)
-    input.addEventListener("change", () => {
-      const val = input.value.trim();
-      if (templates.includes(val)) {
-        loadTemplate(val);
-      }
-    });
-    // Also allow pressing Enter
-    input.addEventListener("keyup", e => {
-      if (e.key === "Enter") {
-        const val = input.value.trim();
-        if (templates.includes(val)) {
-          loadTemplate(val);
+    input.addEventListener('keydown', e => {
+      if (dropdown.style.display === 'none') { openDropdown(); return; }
+      if      (e.key === 'ArrowDown')  { e.preventDefault(); moveFocus(+1); }
+      else if (e.key === 'ArrowUp')    { e.preventDefault(); moveFocus(-1); }
+      else if (e.key === 'Escape')     { closeDropdown(); input.blur(); }
+      else if (e.key === 'Enter') {
+        e.preventDefault();
+        const items   = listEl.querySelectorAll('.tmpl-item');
+        const focused = items[focusIdx];
+        if (focused) {
+          selectTemplate(focused.dataset.name);
+        } else {
+          // Fall back to exact-match on typed value
+          const match = templates.find(
+            t => t.toLowerCase() === input.value.trim().toLowerCase()
+          );
+          if (match) selectTemplate(match);
         }
       }
     });
+
+    input.addEventListener('blur', () => {
+      // Delay so mousedown on items fires before blur closes the list
+      setTimeout(closeDropdown, 150);
+    });
+
+    clearBtn.addEventListener('click', () => {
+      input.value            = '';
+      clearBtn.style.display = 'none';
+      input.focus();
+    });
+
+    // Close on outside click
+    document.addEventListener('click', e => {
+      if (!document.getElementById('tmpl-combobox').contains(e.target)) {
+        closeDropdown();
+      }
+    });
+
   } catch (err) {
-    console.error("Error loading templates:", err);
+    console.error('Error loading templates:', err);
   }
 }
 
-    window.addEventListener("load", async () => {
-      loadTemplates();
-    });
+window.addEventListener('load', () => { loadTemplates(); });
   </script>
+
   <script src="js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

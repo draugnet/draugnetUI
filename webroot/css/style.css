@@ -42,40 +42,302 @@
   }
   
   /* ---------------------------------------------
-     Sidebar (token store) styling
+     Token sidebar — fixed width at lg+
      --------------------------------------------- */
-  .sidebar {
-    background-color: var(--sidebar-bg);
-    border-left: 1px solid var(--sidebar-border);
-    height: 100vh;
-    overflow-y: auto;
-    padding: 1rem;
+  @media (min-width: 992px) {
+    #tokenstore-container {
+      flex: 0 0 300px;
+      width: 300px;
+      max-width: 300px;
+    }
+    /* Let the main content column fill remaining space */
+    .row:has(#tokenstore-container) > :not(#tokenstore-container) {
+      flex: 1 1 0%;
+      max-width: none;
+    }
   }
+
+  /* Token sidebar shell */
+  .token-sidebar {
+    height: 100dvh;
+    position: sticky;
+    top: 0;
+    background: var(--sidebar-bg);
+    border-left: 1px solid var(--sidebar-border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Header row */
+  .ts-header {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .65rem .85rem;
+    border-bottom: 1px solid var(--sidebar-border);
+    flex-shrink: 0;
+  }
+  .ts-title {
+    font-size: .625rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    color: var(--bs-secondary-color);
+    flex: 1;
+  }
+  .ts-badge {
+    font-size: .625rem;
+    background: var(--input-bg);
+    border: 1px solid var(--sidebar-border);
+    border-radius: 99px;
+    padding: .1rem .4rem;
+    color: var(--bs-secondary-color);
+    font-variant-numeric: tabular-nums;
+    min-width: 1.4rem;
+    text-align: center;
+  }
+  .ts-header-actions { display: flex; gap: .1rem; }
+  .ts-header-btn {
+    background: none;
+    border: none;
+    padding: .25rem .35rem;
+    border-radius: .25rem;
+    color: var(--bs-secondary-color);
+    cursor: pointer;
+    font-size: .7rem;
+    line-height: 1;
+    transition: background .1s, color .1s;
+  }
+  .ts-header-btn:hover { background: var(--hover-bg); color: var(--app-fg); }
+  #btn-purge-tokens:hover { color: var(--bs-danger, #dc3545); }
+
+  /* Scrollable token list */
+  .ts-list-wrap { flex: 1; overflow-y: auto; overflow-x: hidden; }
+  .ts-list { list-style: none; padding: .3rem 0; margin: 0; }
+
+  /* Empty state */
+  .ts-empty {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: .5rem;
+    padding: 2.5rem 1rem;
+    color: var(--placeholder);
+    font-size: .8rem;
+    text-align: center;
+  }
+  .ts-empty i { font-size: 1.4rem; opacity: .5; }
+
+  /* Token rows */
+  .ts-item {
+    display: flex;
+    align-items: center;
+    padding: .3rem .85rem;
+    gap: .35rem;
+    transition: background .1s;
+  }
+  .ts-item:hover { background: var(--hover-bg); }
+  .ts-item:hover .ts-item-actions { opacity: 1; }
+
+  .ts-token {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: .7rem;
+    color: var(--app-fg);
+    text-decoration: none;
+    line-height: 1.4;
+  }
+  .ts-token:hover { color: var(--bs-primary); }
+
+  /* Per-row action buttons — fade in on row hover */
+  .ts-item-actions {
+    display: flex;
+    gap: .1rem;
+    opacity: 0;
+    transition: opacity .15s;
+    flex-shrink: 0;
+  }
+  .ts-item-btn {
+    background: none;
+    border: none;
+    padding: .2rem .3rem;
+    border-radius: .2rem;
+    cursor: pointer;
+    font-size: .65rem;
+    line-height: 1;
+    color: var(--bs-secondary-color);
+    transition: background .1s, color .1s;
+  }
+  .ts-item-btn:hover { background: var(--input-bg); color: var(--app-fg); }
+  .ts-item-btn.ts-delete:hover { color: var(--bs-danger, #dc3545); }
+
+  /* Footer — add token input */
+  .ts-footer {
+    display: flex;
+    align-items: center;
+    border-top: 1px solid var(--sidebar-border);
+    padding: .45rem .75rem;
+    gap: .35rem;
+    flex-shrink: 0;
+  }
+  .ts-input {
+    flex: 1;
+    min-width: 0;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-size: .75rem;
+    color: var(--app-fg);
+    padding: 0;
+  }
+  .ts-input::placeholder { color: var(--placeholder); }
+  .ts-add-btn {
+    background: none;
+    border: 1px solid var(--sidebar-border);
+    border-radius: .25rem;
+    padding: .2rem .55rem;
+    color: var(--bs-secondary-color);
+    cursor: pointer;
+    font-size: .7rem;
+    line-height: 1.4;
+    transition: background .1s, color .1s;
+    flex-shrink: 0;
+  }
+  .ts-add-btn:hover { background: var(--hover-bg); color: var(--app-fg); }
   
   /* ---------------------------------------------
-     Token items in sidebar
+     Site navigation bar
      --------------------------------------------- */
-  .token-item {
-    cursor: pointer;
-    padding: 0.5rem;
-    border-radius: 0.25rem;
+  .site-nav {
+    display: flex;
+    align-items: center;
+    gap: .15rem;
+    padding: 0 .75rem;
+    height: 44px;
+    background: var(--sidebar-bg);
+    border-bottom: 1px solid var(--card-border);
+    flex-shrink: 0;
   }
-  .token-item:hover {
-    background-color: var(--hover-bg);
+
+  /* Brand / logo link */
+  .site-nav-brand {
+    display: flex;
+    align-items: center;
+    padding-right: .75rem;
+    margin-right: .25rem;
+    border-right: 1px solid var(--card-border);
+    height: 100%;
+    flex-shrink: 0;
     text-decoration: none;
   }
-  
-  /* ---------------------------------------------
-     Active navigation link
-     --------------------------------------------- */
-  .nav-link.active {
-    font-weight: bold;
-    background-color: var(--active-link-bg);
+  .site-nav-logo {
+    height: 26px;
+    width: auto;
   }
-  
-  /* ---------------------------------------------
-     Navbar logo
-     --------------------------------------------- */
+
+  /* Nav items wrapper */
+  .site-nav-items {
+    display: flex;
+    align-items: center;
+    gap: .1rem;
+    flex: 1;
+  }
+
+  /* Individual nav links / dropdown toggle */
+  .site-nav-link {
+    display: inline-flex;
+    align-items: center;
+    padding: .3rem .6rem;
+    border-radius: .3rem;
+    font-size: .82rem;
+    color: var(--bs-secondary-color);
+    text-decoration: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    white-space: nowrap;
+    line-height: 1;
+    transition: color .1s, background .1s;
+  }
+  .site-nav-link:hover {
+    color: var(--app-fg);
+    background: var(--hover-bg);
+    text-decoration: none;
+  }
+  .site-nav-link.active {
+    color: var(--app-fg);
+    background: var(--hover-bg);
+    font-weight: 500;
+  }
+  /* Hide Bootstrap's default dropdown caret */
+  .site-nav-link.dropdown-toggle::after { display: none; }
+  /* Rotate chevron when dropdown is open */
+  .site-nav-link .fa-chevron-down {
+    font-size: .5rem;
+    opacity: .55;
+    transition: transform .15s;
+  }
+  .site-nav-link[aria-expanded="true"] .fa-chevron-down {
+    transform: rotate(180deg);
+  }
+
+  /* Dropdown menu */
+  .site-nav-dropdown {
+    background: var(--sidebar-bg) !important;
+    border: 1px solid var(--card-border) !important;
+    border-radius: .4rem !important;
+    box-shadow: 0 6px 24px rgba(0,0,0,.35) !important;
+    padding: .3rem 0 !important;
+    min-width: 165px;
+  }
+  .site-nav-dropdown .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: .55rem;
+    padding: .4rem .85rem;
+    font-size: .82rem;
+    color: var(--bs-secondary-color);
+    transition: background .1s, color .1s;
+  }
+  .site-nav-dropdown .dropdown-item i {
+    width: .9rem;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .site-nav-dropdown .dropdown-item:hover,
+  .site-nav-dropdown .dropdown-item.active {
+    background: var(--hover-bg);
+    color: var(--app-fg);
+  }
+  .site-nav-dropdown .dropdown-item.active {
+    font-weight: 500;
+  }
+
+  /* Theme toggle icon button */
+  .site-nav-theme {
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    padding: .3rem .5rem;
+    border-radius: .3rem;
+    color: var(--bs-secondary-color);
+    cursor: pointer;
+    font-size: .8rem;
+    line-height: 1;
+    transition: color .1s, background .1s;
+  }
+  .site-nav-theme:hover {
+    background: var(--hover-bg);
+    color: var(--app-fg);
+  }
+
+  /* Legacy — kept for any stray references */
   .navbar-logo {
     height: 30px;
     margin-right: 10px;

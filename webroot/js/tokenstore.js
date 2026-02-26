@@ -11,46 +11,69 @@ function saveTokens(tokens) {
 
 function renderTokenList() {
   const tokens = getTokens();
-  const list = document.getElementById("token-list");
+  const list  = document.getElementById("token-list");
+  const empty = document.getElementById("ts-empty");
+  const badge = document.getElementById("ts-count");
   if (!list) return;
+
+  // Update count badge
+  if (badge) badge.textContent = tokens.length;
+
+  // Toggle empty state
+  if (empty) empty.style.display = tokens.length === 0 ? "flex" : "none";
 
   list.innerHTML = "";
   tokens.forEach((token) => {
-    // Build <li> containing the token text and a delete button
     const li = document.createElement("li");
-    li.className = "d-flex align-items-center justify-content-between mb-1";
+    li.className = "ts-item";
 
-    // Clickable span to navigate
-    const span = document.createElement("span");
-    span.className = "text-truncate";
-    span.textContent = token;
-    span.style.cursor = "pointer";
-    span.onclick = () => {
-      window.location.href = `view.html?token=${encodeURIComponent(token)}`;
-    };
+    // Clickable token (navigate to view page)
+    const a = document.createElement("a");
+    a.className = "ts-token";
+    a.href  = `view.html?token=${encodeURIComponent(token)}`;
+    a.textContent = token;
+    a.title = token;
+
+    // Action buttons
+    const actions = document.createElement("div");
+    actions.className = "ts-item-actions";
+
+    // Copy button
+    const copyBtn = document.createElement("button");
+    copyBtn.type = "button";
+    copyBtn.className = "ts-item-btn";
+    copyBtn.title = "Copy token";
+    copyBtn.innerHTML = '<i class="fa-regular fa-copy"></i>';
+    copyBtn.addEventListener("click", async (e) => {
+      e.preventDefault();
+      try {
+        await navigator.clipboard.writeText(token);
+        copyBtn.innerHTML = '<i class="fa-solid fa-check"></i>';
+        setTimeout(() => {
+          copyBtn.innerHTML = '<i class="fa-regular fa-copy"></i>';
+        }, 1500);
+      } catch (_) {
+        // clipboard API unavailable — silently fail
+      }
+    });
 
     // Delete button
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "btn btn-sm btn-outline-danger ms-2";
-    btn.innerHTML = `<i class="fa-solid fa-trash"></i>`;
-    btn.onclick = (e) => {
-      e.stopPropagation();  // don’t trigger the span click
-      if (
-        confirm(
-          "Are you sure you want to permanently remove this token from your token store?"
-        )
-      ) {
-        const newTokens = getTokens().filter((t) => t !== token);
-        saveTokens(newTokens);
+    const delBtn = document.createElement("button");
+    delBtn.type = "button";
+    delBtn.className = "ts-item-btn ts-delete";
+    delBtn.title = "Remove token";
+    delBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+    delBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      if (confirm("Remove this token from your store?")) {
+        saveTokens(getTokens().filter((t) => t !== token));
       }
-    };
+    });
 
-    // purge all button
-
-
-    li.appendChild(span);
-    li.appendChild(btn);
+    actions.appendChild(copyBtn);
+    actions.appendChild(delBtn);
+    li.appendChild(a);
+    li.appendChild(actions);
     list.appendChild(li);
   });
 }
@@ -71,16 +94,16 @@ function addToken() {
 function downloadTokens() {
   const tokens = getTokens();
   const blob = new Blob([tokens.join("\n")], { type: "text/plain" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  a.href     = url;
   a.download = "tokens.txt";
   a.click();
   URL.revokeObjectURL(url);
 }
 
 function purgeTokens() {
-  if (confirm("Are you sure you want to permanently remove all tokens from your token store?")) {
+  if (confirm("Are you sure you want to permanently remove all tokens from your store?")) {
     localStorage.removeItem("tokens");
     renderTokenList();
   }
@@ -97,7 +120,6 @@ async function loadTokenStore() {
   document.getElementById("btn-download-tokens").addEventListener("click", downloadTokens);
   document.getElementById("btn-purge-tokens").addEventListener("click", purgeTokens);
 
-  // Also submit on Enter in the token input
   document.getElementById("new-token").addEventListener("keydown", e => {
     if (e.key === "Enter") addToken();
   });
